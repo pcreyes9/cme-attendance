@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\CmeAttendance;
 use App\Models\CmeProgramRegistration;
 use Livewire\Component;
+use App\Models\CmeProgramRegistrationNM;
 
 class AdminDashboard extends Component
 {
@@ -14,11 +15,19 @@ class AdminDashboard extends Component
 
     public function getTotalRegisteredProperty(): int
     {
-        return CmeProgramRegistration::query()
+        $members = CmeProgramRegistration::query()
             ->where('cme_year', $this->cmeYear)
             ->where('cme_program_code', $this->cmeProgramCode)
-            ->distinct('member_id_no')
+            ->distinct()
             ->count('member_id_no');
+
+        $nonMembers = CmeProgramRegistrationNM::query()
+            ->where('cme_year', $this->cmeYear)
+            ->where('cme_program_code', $this->cmeProgramCode)
+            ->distinct()
+            ->count('nm_id_no');
+
+        return $members + $nonMembers;
     }
 
     public function getTodayAttendanceProperty(): int

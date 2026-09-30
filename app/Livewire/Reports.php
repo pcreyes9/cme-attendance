@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\CmeAttendance;
 use App\Models\CmeProgramRegistration;
+use App\Models\CmeProgramRegistrationNM;
 use Livewire\Component;
 
 class Reports extends Component
@@ -45,7 +46,33 @@ class Reports extends Component
 
     public function getTotalRegisteredProperty(): int
     {
+        $regularMembers = CmeProgramRegistration::query()
+            ->where('cme_year', $this->cmeYear)
+            ->where('cme_program_code', $this->cmeProgramCode)
+            ->distinct()
+            ->count('member_id_no');
+
+        $nonMembers = CmeProgramRegistrationNM::query()
+            ->where('cme_year', $this->cmeYear)
+            ->where('cme_program_code', $this->cmeProgramCode)
+            ->distinct()
+            ->count('nm_id_no');
+
+        return $regularMembers + $nonMembers;
+    }
+
+    public function getTotalRegisteredMembersProperty(): int
+    {
         return CmeProgramRegistration::query()
+            ->where('cme_year', $this->cmeYear)
+            ->where('cme_program_code', $this->cmeProgramCode)
+            ->distinct()
+            ->count('member_id_no');
+    }
+
+    public function getTotalRegisteredNmProperty(): int
+    {
+        return CmeProgramRegistrationNM::query()
             ->where('cme_year', $this->cmeYear)
             ->where('cme_program_code', $this->cmeProgramCode)
             ->distinct()
@@ -79,7 +106,7 @@ class Reports extends Component
 
     /*
     |--------------------------------------------------------------------------
-    | Summary
+    | Attendance Summary
     |--------------------------------------------------------------------------
     */
 
@@ -108,6 +135,19 @@ class Reports extends Component
             ->where('mem_type', 'TM')
             ->count();
     }
+
+    public function getNmCountProperty(): int
+    {
+        return $this->attendanceQuery()
+            ->where('mem_type', 'NM')
+            ->count();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Attendance Percentage
+    |--------------------------------------------------------------------------
+    */
 
     public function getAttendancePercentageProperty(): float
     {
@@ -149,7 +189,8 @@ class Reports extends Component
                 COUNT(*) as total,
                 SUM(CASE WHEN mem_type = 'RM' THEN 1 ELSE 0 END) as rm,
                 SUM(CASE WHEN mem_type = 'LM' THEN 1 ELSE 0 END) as lm,
-                SUM(CASE WHEN mem_type = 'TM' THEN 1 ELSE 0 END) as tm
+                SUM(CASE WHEN mem_type = 'TM' THEN 1 ELSE 0 END) as tm,
+                SUM(CASE WHEN mem_type = 'NM' THEN 1 ELSE 0 END) as nm
             ")
             ->groupBy('date')
             ->orderByDesc('date')

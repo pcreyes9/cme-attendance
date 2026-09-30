@@ -32,70 +32,6 @@
     </div>
 
 
-    {{-- Navigation --}}
-    {{-- <div class="bg-white border-b border-gray-200">
-
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-            <div class="flex items-center gap-6 h-12 text-sm">
-
-                <a
-                    href="{{ route('dashboard') }}"
-                    class="text-gray-600 hover:text-gray-900"
-                >
-                    Dashboard
-                </a>
-
-                <a
-                    href="{{ url('/cme-attendance') }}"
-                    class="text-gray-600 hover:text-gray-900"
-                >
-                    Time In
-                </a>
-
-                <a
-                    href="{{ route('attendance-records') }}"
-                    class="text-gray-600 hover:text-gray-900"
-                >
-                    Attendance Records
-                </a>
-
-                <a
-                    href="{{ route('manual-attendance') }}"
-                    class="font-semibold text-indigo-600"
-                >
-                    Manual Attendance
-                </a>
-
-                <a
-                    href="{{ url('/reports') }}"
-                    class="text-gray-600 hover:text-gray-900"
-                >
-                    Reports
-                </a>
-
-                <div class="ml-auto">
-
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-
-                        <button
-                            type="submit"
-                            class="text-gray-600 hover:text-red-600"
-                        >
-                            Log Out
-                        </button>
-                    </form>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div> --}}
-
-
     {{-- Main --}}
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -107,13 +43,13 @@
             </h2>
 
             <p class="mt-1 text-sm text-gray-500">
-                Add an attendance record manually for a registered CME member.
+                Add an attendance record manually for a registered CME participant.
             </p>
 
         </div>
 
 
-        {{-- Success --}}
+        {{-- Success Message --}}
         @if (session()->has('success'))
 
             <div class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
@@ -133,6 +69,7 @@
             <div class="grid grid-cols-2 gap-6">
 
                 <div>
+
                     <div class="text-xs uppercase tracking-wide text-gray-500">
                         CME Year
                     </div>
@@ -140,9 +77,11 @@
                     <div class="mt-1 font-semibold text-gray-900">
                         {{ $cmeYear }}
                     </div>
+
                 </div>
 
                 <div>
+
                     <div class="text-xs uppercase tracking-wide text-gray-500">
                         Program
                     </div>
@@ -150,6 +89,7 @@
                     <div class="mt-1 font-semibold text-gray-900">
                         {{ $cmeProgramCode }}
                     </div>
+
                 </div>
 
             </div>
@@ -160,6 +100,7 @@
         {{-- Form --}}
         <div class="bg-white rounded-xl border border-gray-200">
 
+            {{-- Form Header --}}
             <div class="px-6 py-5 border-b border-gray-200">
 
                 <h3 class="font-semibold text-gray-900">
@@ -167,7 +108,7 @@
                 </h3>
 
                 <p class="text-sm text-gray-500 mt-1">
-                    Select a registered member and enter the attendance details.
+                    Select a registered member or non-member and enter the attendance details.
                 </p>
 
             </div>
@@ -175,16 +116,20 @@
 
             <div class="p-6 space-y-6">
 
-                {{-- Member --}}
+                {{-- ========================================================= --}}
+                {{-- PARTICIPANT --}}
+                {{-- ========================================================= --}}
+
                 <div>
 
                     <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Registered Member
+                        Registered Participant
                     </label>
 
+
+                    {{-- Selected Participant --}}
                     @if ($selectedMemberId)
 
-                        {{-- Selected Member --}}
                         <div class="border border-green-200 bg-green-50 rounded-lg p-4">
 
                             <div class="flex items-center justify-between">
@@ -192,22 +137,44 @@
                                 <div>
 
                                     <div class="font-semibold text-gray-900">
+
                                         {{ $this->selectedMember->mem_last_name }},
                                         {{ $this->selectedMember->mem_first_name }}
                                         {{ $this->selectedMember->mem_middle_name }}
+
                                     </div>
+
 
                                     <div class="text-sm text-gray-600 mt-1">
-                                        Member ID:
+
+                                        ID:
                                         {{ $this->selectedMember->member_id_no }}
+
                                     </div>
 
+
                                     <div class="text-sm text-gray-600">
-                                        Member Type:
-                                        {{ $this->selectedMember->psa_mem_type }}
+
+                                        Participant Type:
+
+                                        @if ($this->selectedMember->psa_mem_type === 'NM')
+
+                                            <span class="font-semibold text-purple-700">
+                                                NM
+                                            </span>
+
+                                        @else
+
+                                            <span class="font-semibold">
+                                                {{ $this->selectedMember->psa_mem_type }}
+                                            </span>
+
+                                        @endif
+
                                     </div>
 
                                 </div>
+
 
                                 <button
                                     type="button"
@@ -223,14 +190,15 @@
 
                     @else
 
-                        {{-- Search Member --}}
+                        {{-- Search --}}
                         <input
                             type="text"
                             wire:model.live.debounce.300ms="search"
-                            placeholder="Search Member ID or name..."
+                            placeholder="Search Member ID, NM ID, or name..."
                             class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
                             autocomplete="off"
                         >
+
 
                         {{-- Search Results --}}
                         @if ($search !== '')
@@ -241,20 +209,47 @@
 
                                     <button
                                         type="button"
-                                        wire:click="selectMember('{{ $member->member_id_no }}')"
+                                        wire:click="selectMember('{{ $member->id }}')"
                                         class="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-0"
                                     >
 
-                                        <div class="font-medium text-gray-900">
-                                            {{ $member->mem_last_name }},
-                                            {{ $member->mem_first_name }}
-                                            {{ $member->mem_middle_name }}
-                                        </div>
+                                        <div class="flex items-center justify-between gap-4">
 
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            ID: {{ $member->member_id_no }}
-                                            ·
-                                            {{ $member->psa_mem_type }}
+                                            <div>
+
+                                                <div class="font-medium text-gray-900">
+
+                                                    {{ $member->last_name }},
+                                                    {{ $member->first_name }}
+                                                    {{ $member->middle_name }}
+
+                                                </div>
+
+                                                <div class="text-xs text-gray-500 mt-1">
+
+                                                    ID:
+                                                    {{ $member->id }}
+
+                                                </div>
+
+                                            </div>
+
+
+                                            {{-- Member Type --}}
+                                            @if ($member->mem_type === 'NM')
+
+                                                <span class="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-1 text-xs font-semibold text-purple-700">
+                                                    NM
+                                                </span>
+
+                                            @else
+
+                                                <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                                                    {{ $member->mem_type }}
+                                                </span>
+
+                                            @endif
+
                                         </div>
 
                                     </button>
@@ -262,7 +257,9 @@
                                 @empty
 
                                     <div class="px-4 py-4 text-sm text-gray-500">
-                                        No registered members found.
+
+                                        No registered participants found.
+
                                     </div>
 
                                 @endforelse
@@ -272,6 +269,7 @@
                         @endif
 
                     @endif
+
 
                     @error('selectedMemberId')
 
@@ -284,7 +282,10 @@
                 </div>
 
 
-                {{-- Date and Time --}}
+                {{-- ========================================================= --}}
+                {{-- DATE AND TIME --}}
+                {{-- ========================================================= --}}
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
                     {{-- Date --}}
@@ -345,7 +346,10 @@
                 </div>
 
 
-                {{-- Remarks --}}
+                {{-- ========================================================= --}}
+                {{-- REMARKS --}}
+                {{-- ========================================================= --}}
+
                 <div>
 
                     <label
@@ -377,7 +381,10 @@
             </div>
 
 
-            {{-- Footer --}}
+            {{-- ========================================================= --}}
+            {{-- FOOTER --}}
+            {{-- ========================================================= --}}
+
             <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
 
                 <button
@@ -387,6 +394,7 @@
                 >
                     Clear
                 </button>
+
 
                 <button
                     type="button"
@@ -410,14 +418,25 @@
         </div>
 
 
-        {{-- Note --}}
+        {{-- ========================================================= --}}
+        {{-- NOTE --}}
+        {{-- ========================================================= --}}
+
         <div class="mt-5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
 
             <p class="text-sm text-blue-800">
+
                 <strong>Note:</strong>
-                Only members registered for
+
+                Only participants registered for
                 <strong>{{ $cmeProgramCode }}</strong>
                 are available for manual attendance.
+
+                This includes both
+                <strong>PSA members</strong>
+                and
+                <strong>Non-Members (NM)</strong>.
+
             </p>
 
         </div>
