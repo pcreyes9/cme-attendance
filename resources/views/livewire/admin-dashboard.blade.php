@@ -30,66 +30,6 @@
     </div>
 
 
-    {{-- Navigation --}}
-    {{-- <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-            <div class="flex items-center gap-6 h-12 text-sm">
-
-                <a
-                    href="{{ route('dashboard') }}"
-                    class="font-semibold text-indigo-600"
-                >
-                    Dashboard
-                </a>
-
-                <a
-                    href="{{ url('/') }}"
-                    class="text-gray-600 hover:text-gray-900"
-                >
-                    Time In
-                </a>
-
-                <a
-                    href="{{ url('/attendance-records') }}"
-                    class="text-gray-600 hover:text-gray-900"
-                >
-                    Attendance Records
-                </a>
-
-                <a
-                    href="{{ url('/manual-attendance') }}"
-                    class="text-gray-600 hover:text-gray-900"
-                >
-                    Manual Attendance
-                </a>
-
-                <a
-                    href="{{ url('/reports') }}"
-                    class="text-gray-600 hover:text-gray-900"
-                >
-                    Reports
-                </a>
-
-                <div class="ml-auto">
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-
-                        <button
-                            type="submit"
-                            class="text-gray-600 hover:text-red-600"
-                        >
-                            Log Out
-                        </button>
-                    </form>
-                </div>
-
-            </div>
-
-        </div>
-    </div> --}}
-
-
     {{-- Main Content --}}
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -128,129 +68,77 @@
 
         </div>
 
-
         {{-- Statistics --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-8">
 
-            {{-- Registered --}}
+            {{-- Registered Members --}}
             <div class="bg-white rounded-xl border border-gray-200 p-5">
-
-                <div class="flex items-center justify-between">
-
-                    <div>
-                        <p class="text-sm text-gray-500">
-                            Registered Members
-                        </p>
-
-                        <p class="mt-2 text-3xl font-bold text-gray-900">
-                            {{ number_format($this->totalRegistered) }}
-                        </p>
-                    </div>
-
-                    <div class="w-11 h-11 rounded-lg bg-indigo-50 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-indigo-600"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
-                            <path stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m8-5a4 4 0 10-8 0 4 4 0 008 0zm5 0a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                    </div>
-
+                <p class="text-sm text-gray-500">Registered Members</p>
+                <p class="mt-2 text-3xl font-bold text-gray-900">
+                    {{ number_format($this->totalRegistered) }}
+                </p>
+                <div class="mt-3 text-xs font-medium text-indigo-600">
+                    Total Registrations
                 </div>
-
             </div>
 
-
-            {{-- Today --}}
+            {{-- Today's Attendance --}}
             <div class="bg-white rounded-xl border border-gray-200 p-5">
-
-                <div class="flex items-center justify-between">
-
-                    <div>
-                        <p class="text-sm text-gray-500">
-                            Today's Attendance
-                        </p>
-
-                        <p class="mt-2 text-3xl font-bold text-gray-900">
-                            {{ number_format($this->todayAttendance) }}
-                        </p>
-                    </div>
-
-                    <div class="w-11 h-11 rounded-lg bg-green-50 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-green-600"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
-                            <path stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M5 13l4 4L19 7"/>
-                        </svg>
-                    </div>
-
+                <p class="text-sm text-gray-500">Today's Attendance</p>
+                <p class="mt-2 text-3xl font-bold text-gray-900">
+                    {{ number_format($this->todayAttendance) }}
+                </p>
+                <div class="mt-3 text-xs font-medium text-green-600">
+                    Total Check-ins Today
                 </div>
-
             </div>
 
-
-            {{-- RM --}}
-            <div class="bg-white rounded-xl border border-gray-200 p-5">
-
+            {{-- Regular Members --}}
+            <div class="bg-white rounded-xl border border-blue-200 p-5">
                 <div class="flex items-center justify-between">
-
                     <div>
-                        <p class="text-sm text-gray-500">
-                            Regular Members
-                        </p>
-
-                        <p class="mt-2 text-3xl font-bold text-gray-900">
+                        <p class="text-sm text-gray-500">Regular Members</p>
+                        <p class="mt-2 text-3xl font-bold text-blue-700">
                             {{ number_format($this->todayRmCount) }}
                         </p>
                     </div>
 
                     <div class="w-11 h-11 rounded-lg bg-blue-50 flex items-center justify-center">
-                        <span class="text-sm font-bold text-blue-600">
-                            RM
-                        </span>
+                        <span class="text-sm font-bold text-blue-600">RM</span>
                     </div>
-
                 </div>
-
             </div>
 
-
-            {{-- LM/TM --}}
-            <div class="bg-white rounded-xl border border-gray-200 p-5">
-
+            {{-- Life Members --}}
+            <div class="bg-white rounded-xl border border-purple-200 p-5">
                 <div class="flex items-center justify-between">
-
                     <div>
-                        <p class="text-sm text-gray-500">
-                            LM / TM
-                        </p>
-
-                        <p class="mt-2 text-3xl font-bold text-gray-900">
-                            {{ number_format($this->todayLmCount + $this->todayTmCount) }}
-                        </p>
-
-                        <p class="mt-1 text-xs text-gray-500">
-                            LM: {{ $this->todayLmCount }}
-                            ·
-                            TM: {{ $this->todayTmCount }}
+                        <p class="text-sm text-gray-500">Life Members</p>
+                        <p class="mt-2 text-3xl font-bold text-purple-700">
+                            {{ number_format($this->todayLmCount) }}
                         </p>
                     </div>
 
                     <div class="w-11 h-11 rounded-lg bg-purple-50 flex items-center justify-center">
-                        <span class="text-sm font-bold text-purple-600">
-                            LM/TM
-                        </span>
+                        <span class="text-sm font-bold text-purple-600">LM</span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Trainee Members --}}
+            <div class="bg-white rounded-xl border border-amber-200 p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Trainee Members</p>
+                        <p class="mt-2 text-3xl font-bold text-amber-700">
+                            {{ number_format($this->todayTmCount) }}
+                        </p>
                     </div>
 
+                    <div class="w-11 h-11 rounded-lg bg-amber-50 flex items-center justify-center">
+                        <span class="text-sm font-bold text-amber-600">TM</span>
+                    </div>
                 </div>
-
             </div>
 
         </div>

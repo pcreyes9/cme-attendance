@@ -1,36 +1,446 @@
 <div
-    class="min-h-screen bg-slate-50 p-6"
+    class="min-h-screen bg-slate-50 p-4 sm:p-6"
     x-data="{ now: new Date() }"
     x-init="setInterval(() => now = new Date(), 1000)"
 >
+    {{-- HEADER --}}
+    <div class="mb-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
 
-    <div class="max-w-7xl mx-auto space-y-6">
+        @if (!$displayMemberId)
+            {{-- DEFAULT HEADER --}}
+            <div class="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-6 text-white">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold uppercase tracking-widest text-blue-200">
+                            Philippine Society of Anesthesiologists, INC.
+                        </p>
 
+                        <h1 class="mt-2 text-3xl font-bold">
+                            CME Attendance
+                        </h1>
 
-        {{-- ========================================================= --}}
-        {{-- HEADER --}}
-        {{-- ========================================================= --}}
+                        <p class="mt-2 text-sm text-blue-100">
+                            Scan your registered member ID to record attendance.
+                        </p>
 
-        <div
-            class="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-4"
-        >
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="rounded-full bg-white/15 px-3 py-1 text-sm">
+                                CME Year: {{ $cmeYear }}
+                            </span>
 
-            {{-- ===================================================== --}}
-            {{-- NORMAL HEADER --}}
-            {{-- ===================================================== --}}
+                            <span class="rounded-full bg-white/15 px-3 py-1 text-sm">
+                                Program: {{ $cmeProgramCode }}
+                            </span>
+                        </div>
+                    </div>
 
-            @if (!$displayMemberId)
+                    <div class="rounded-xl bg-white/10 p-4 text-left sm:min-w-48 sm:text-right">
+                        <div
+                            class="text-3xl font-bold tabular-nums"
+                            x-text="now.toLocaleTimeString('en-PH', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: true
+                            })"
+                        ></div>
 
+                        <div
+                            class="mt-1 text-sm text-blue-100"
+                            x-text="now.toLocaleDateString('en-PH', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            })"
+                        ></div>
+                    </div>
+                </div>
+            </div>
+        @else
+            {{-- SUCCESSFUL TIME-IN MEMBER HEADER --}}
+            <div
+                class="relative overflow-hidden bg-gradient-to-r from-emerald-700 to-emerald-500 px-6 py-6 text-white"
+                x-data="{ showSummary: true }"
+                x-init="setTimeout(() => {
+                    showSummary = false;
+                    $wire.clearSummary();
+                }, 8000)"
+            >
+                <div class="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
+
+                    {{-- MEMBER PHOTO --}}
+                    <div class="shrink-0">
+                        @if ($memberPhoto)
+                            <img
+                                src="{{ $memberPhoto }}"
+                                alt="Member photo"
+                                class="h-28 w-28 rounded-full border-4 border-white/80 bg-white object-cover shadow-lg"
+                            >
+                        @else
+                            <div class="flex h-28 w-28 items-center justify-center rounded-full border-4 border-white/80 bg-white/20 text-3xl font-bold shadow-lg">
+                                {{ strtoupper(substr($displayFirstName ?? '', 0, 1) . substr($displayLastName ?? '', 0, 1)) }}
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- MEMBER INFORMATION --}}
+                    <div class="min-w-0 flex-1 text-center sm:text-left">
+                        <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-sm font-semibold">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-5 w-5"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M16.704 5.29a1 1 0 010 1.415l-7.2 7.2a1 1 0 01-1.415 0l-3.5-3.5a1 1 0 111.414-1.415l2.793 2.793 6.493-6.493a1 1 0 011.415 0z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+
+                            TIME IN RECORDED
+                        </div>
+
+                        <h2 class="text-2xl font-bold sm:text-3xl">
+                            {{ $displayLastName }},
+                            {{ $displayFirstName }}
+                            {{ $displayMiddleName }}
+                        </h2>
+
+                        <div class="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+                            <span class="rounded-lg bg-white/20 px-3 py-1.5 text-sm font-semibold">
+                                ID: {{ $displayMemberId }}
+                            </span>
+
+                            <span class="rounded-lg bg-white/20 px-3 py-1.5 text-sm font-semibold">
+                                {{ match ($displayMemberType) {
+                                    'RM' => 'Regular Member',
+                                    'LM' => 'Life Member',
+                                    'TM' => 'Trainee Member',
+                                    'NM' => 'Non-Member',
+                                    default => $displayMemberType ?? 'Member'
+                                } }}
+                                ({{ $displayMemberType }})
+                            </span>
+                        </div>
+
+                        <p class="mt-3 text-sm text-emerald-50">
+                            Attendance Date: {{ now()->format('F d, Y') }}
+                        </p>
+                    </div>
+
+                    {{-- TIME-IN TIME --}}
+                    <div class="rounded-xl bg-white/15 px-5 py-4 text-center sm:min-w-44">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-emerald-100">
+                            Time In
+                        </p>
+
+                        <p class="mt-1 text-2xl font-bold tabular-nums">
+                            {{ $displayTimeIn }}
+                        </p>
+
+                        <p class="mt-2 text-xs text-emerald-100">
+                            Welcome!
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-5 h-1 overflow-hidden rounded-full bg-white/20">
+                    <div
+                        class="h-full rounded-full bg-white"
+                        x-show="showSummary"
+                        x-transition
+                        style="animation: summary-progress 8s linear forwards;"
+                    ></div>
+                </div>
+            </div>
+        @endif
+    </div>
+
+    {{-- MAIN CONTENT --}}
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+
+        {{-- LEFT COLUMN: REGISTRATION AND TIME-IN --}}
+        <div class="space-y-6 xl:col-span-1">
+
+            {{-- REGISTRATION STATISTICS --}}
+            <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
                 <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">
+                            Registered Participants
+                        </h2>
+
+                        <p class="mt-1 text-sm text-slate-500">
+                            Total program registrations
+                        </p>
+                    </div>
+
+                    <div class="rounded-xl bg-blue-50 p-3 text-blue-700">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-6 w-6"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                            <circle cx="10" cy="7" r="4" />
+                            <path d="M20 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="mt-5">
+                    <p class="text-4xl font-bold text-slate-900">
+                        {{ $this->totalRegistered }}
+                    </p>
+
+                    <div class="mt-4 flex items-center justify-between text-sm">
+                        <span class="text-slate-500">Total attendance recorded</span>
+
+                        <span class="font-semibold text-blue-700">
+                            {{ $this->totalAttendance }}
+                        </span>
+                    </div>
+
+                    <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                            class="h-full rounded-full bg-blue-600 transition-all duration-500"
+                            style="width: {{ $this->totalRegistered > 0 ? min(100, ($this->totalAttendance / $this->totalRegistered) * 100) : 0 }}%"
+                        ></div>
+                    </div>
+
+                    <p class="mt-2 text-xs text-slate-400">
+                        Overall check-in progress
+                    </p>
+                </div>
+            </div>
+
+            {{-- TIME-IN FORM --}}
+            <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <div class="mb-5">
+                    <h2 class="text-lg font-bold text-slate-900">
+                        Participant Time In
+                    </h2>
+
+                    <p class="mt-1 text-sm text-slate-500">
+                        Scan the QR code or enter the registered ID.
+                    </p>
+                </div>
+
+                <form wire:submit="timeIn" class="space-y-4">
+                    <div>
+                        <label
+                            for="memberId"
+                            class="mb-2 block text-sm font-semibold text-slate-700"
+                        >
+                            Member / Participant ID
+                        </label>
+
+                        <input
+                            id="memberId"
+                            type="text"
+                            wire:model="memberId"
+                            placeholder="Scan or enter ID here..."
+                            autocomplete="off"
+                            autofocus
+                            class="w-full rounded-xl border border-slate-300 px-4 py-4 text-lg font-semibold uppercase text-slate-900 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        >
+
+                        @error('memberId')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <button
+                        type="submit"
+                        wire:loading.attr="disabled"
+                        wire:target="timeIn"
+                        class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-4 font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        <span wire:loading.remove wire:target="timeIn">
+                            Record Time In
+                        </span>
+
+                        <span wire:loading wire:target="timeIn">
+                            Processing...
+                        </span>
+                    </button>
+                </form>
+
+                {{-- FEEDBACK MESSAGE --}}
+                @if ($message)
+                    <div
+                        class="mt-4 rounded-xl border p-4 text-sm font-medium
+                        {{ $messageType === 'success'
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                            : 'border-red-200 bg-red-50 text-red-800' }}"
+                        role="status"
+                        aria-live="polite"
+                    >
+                        <div class="flex items-start gap-2">
+                            @if ($messageType === 'success')
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="mt-0.5 h-5 w-5 shrink-0"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clip-rule="evenodd"
+                                    />
+                                </svg>
+                            @else
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="mt-0.5 h-5 w-5 shrink-0"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                        clip-rule="evenodd"
+                                    />
+                                </svg>
+                            @endif
+
+                            <span>{{ $message }}</span>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="mt-5 rounded-xl bg-slate-50 p-4">
+                    <p class="text-xs leading-5 text-slate-500">
+                        Only participants registered for the selected CME program
+                        can record attendance. Duplicate check-ins for the same
+                        day are not allowed.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {{-- RIGHT COLUMN: ATTENDANCE DASHBOARD --}}
+        <div class="space-y-6 xl:col-span-2">
+
+            {{-- TODAY'S ATTENDANCE --}}
+            <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <div class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">
+                            Today's Attendance
+                        </h2>
+
+                        <p class="mt-1 text-sm text-slate-500">
+                            Check-ins recorded for today
+                        </p>
+                    </div>
+
+                    <span class="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                        {{ now()->format('F d, Y') }}
+                    </span>
+                </div>
+
+                {{-- EACH MEMBER TYPE HAS ITS OWN CARD --}}
+                <div class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+
+                    {{-- TOTAL --}}
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <p class="text-xs font-semibold text-slate-500">
+                            Today's Total
+                        </p>
+
+                        <p class="mt-2 text-3xl font-bold text-slate-900">
+                            {{ $this->todayAttendance }}
+                        </p>
+
+                        <p class="mt-1 text-xs text-slate-400">
+                            Participants
+                        </p>
+                    </div>
+
+                    {{-- RM --}}
+                    <div class="rounded-xl border border-blue-100 bg-blue-50 p-4">
+                        <p class="text-xs font-semibold text-blue-700">
+                            Regular Member
+                        </p>
+
+                        <p class="mt-2 text-3xl font-bold text-blue-800">
+                            {{ $this->todayRmCount }}
+                        </p>
+
+                        <p class="mt-1 text-xs text-blue-600">RM</p>
+                    </div>
+
+                    {{-- LM --}}
+                    <div class="rounded-xl border border-purple-100 bg-purple-50 p-4">
+                        <p class="text-xs font-semibold text-purple-700">
+                            Life Member
+                        </p>
+
+                        <p class="mt-2 text-3xl font-bold text-purple-800">
+                            {{ $this->todayLmCount }}
+                        </p>
+
+                        <p class="mt-1 text-xs text-purple-600">LM</p>
+                    </div>
+
+                    {{-- TM --}}
+                    <div class="rounded-xl border border-amber-100 bg-amber-50 p-4">
+                        <p class="text-xs font-semibold text-amber-700">
+                            Trainee Member
+                        </p>
+
+                        <p class="mt-2 text-3xl font-bold text-amber-800">
+                            {{ $this->todayTmCount }}
+                        </p>
+
+                        <p class="mt-1 text-xs text-amber-600">TM</p>
+                    </div>
+
+                    {{-- NM --}}
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                        <p class="text-xs font-semibold text-gray-600">
+                            Non-Member
+                        </p>
+
+                        <p class="mt-2 text-3xl font-bold text-gray-800">
+                            {{ $this->todayNmCount }}
+                        </p>
+
+                        <p class="mt-1 text-xs text-gray-500">NM</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- RECENT CHECK-INS --}}
+            <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <div class="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">
+                            Recent Check-Ins
+                        </h2>
+
+                        <p class="mt-1 text-sm text-slate-500">
+                            Latest participants recorded today
+                        </p>
+                    </div>
 
                     <div class="flex items-center gap-3">
 
-                        <div
-                            class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"
-                        >
+                        {{-- QUICK SEARCH --}}
+                        <div class="relative w-full sm:w-72">
 
                             <svg
-                                class="w-5 h-5 text-white"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -39,905 +449,299 @@
                                 <path
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    d="m21 21-4.35-4.35m0 0A7.5 7.5 0 1 0 6.05 6.05a7.5 7.5 0 0 0 10.6 10.6z"
                                 />
                             </svg>
 
-                        </div>
+                            <input
+                                type="text"
+                                wire:model.live.debounce.300ms="recentSearch"
+                                placeholder="Search ID or name..."
+                                class="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                            >
 
-
-                        <div>
-
-                            <h1 class="text-lg font-bold text-gray-900">
-                                CME Attendance
-                            </h1>
-
-                            <p class="text-xs text-gray-400">
-                                {{ $cmeYear }} —
-                                {{ $cmeProgramCode }}
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="text-right">
-
-                        <div
-                            class="text-sm font-mono text-gray-600"
-                            x-text="now.toLocaleTimeString()"
-                        ></div>
-
-                        <div
-                            class="text-xs text-gray-400"
-                            x-text="now.toLocaleDateString(undefined, {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            })"
-                        ></div>
-
-                    </div>
-
-                </div>
-
-            @else
-
-                {{-- ================================================= --}}
-                {{-- MEMBER SUCCESS HEADER --}}
-                {{-- ================================================= --}}
-
-                <div
-                    x-data
-                    x-init="
-                        setTimeout(() => {
-                            $wire.clearSummary()
-                        }, 8000)
-                    "
-                    class="flex flex-col lg:flex-row lg:items-center justify-between gap-5"
-                >
-
-                    {{-- MEMBER --}}
-                    <div class="flex items-center gap-5">
-
-                        {{-- PHOTO --}}
-                        <div
-                            class="w-20 h-20 rounded-full overflow-hidden bg-gray-100 border-4 border-green-100 flex-shrink-0"
-                        >
-
-                            @if ($memberPhoto)
-
-                                <img
-                                    src="{{ $memberPhoto }}"
-                                    alt="Member Photo"
-                                    class="w-full h-full object-cover"
+                            @if ($recentSearch)
+                                <button
+                                    type="button"
+                                    wire:click="$set('recentSearch', '')"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    title="Clear search"
                                 >
-
-                            @else
-
-                                @php
-                                    $initials = strtoupper(
-                                        substr($displayFirstName ?? '', 0, 1) .
-                                        substr($displayLastName ?? '', 0, 1)
-                                    );
-                                @endphp
-
-                                <div
-                                    class="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 text-xl font-bold"
-                                >
-                                    {{ $initials ?: '?' }}
-                                </div>
-
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="h-5 w-5"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
                             @endif
 
                         </div>
 
+                        {{-- LIVE INDICATOR --}}
+                        <span class="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                            Live
+                        </span>
 
-                        {{-- MEMBER INFORMATION --}}
-                        <div>
+                    </div>
+                </div>
 
-                            <div
-                                class="flex items-center gap-2 mb-1"
+                @if ($this->recentCheckIns->isEmpty())
+                    <div class="rounded-xl border border-dashed border-slate-300 py-10 text-center">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-6 w-6"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
                             >
+                                <path d="M12 8v4l3 2" />
+                                <circle cx="12" cy="12" r="10" />
+                            </svg>
+                        </div>
 
-                                <span
-                                    class="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-100 px-2.5 py-1 rounded-full"
+                        <p class="mt-3 font-semibold text-slate-700">
+                            No check-ins yet
+                        </p>
+
+                        <p class="mt-1 text-sm text-slate-500">
+                            Successful time-ins will appear here.
+                        </p>
+                    </div>
+                @else
+                    <div class="max-h-[300px] overflow-y-auto divide-y divide-slate-100 pr-2">
+                        @foreach ($this->recentCheckIns as $checkIn)
+                            <div
+                                wire:key="recent-check-in-{{ $checkIn->id }}"
+                                class="flex items-center gap-3 py-4 first:pt-0 last:pb-0"
+                            >
+                                {{-- INITIALS AVATAR --}}
+                                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full
+                                    {{ match ($checkIn->mem_type) {
+                                        'RM' => 'bg-blue-100 text-blue-700',
+                                        'LM' => 'bg-purple-100 text-purple-700',
+                                        'TM' => 'bg-amber-100 text-amber-700',
+                                        'NM' => 'bg-gray-200 text-gray-700',
+                                        default => 'bg-slate-100 text-slate-700'
+                                    } }}
+                                    text-sm font-bold"
                                 >
-
-                                    <svg
-                                        class="w-3.5 h-3.5"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M5 13l4 4L19 7"
-                                        />
-                                    </svg>
-
-                                    TIME IN RECORDED
-
-                                </span>
-
-                            </div>
-
-
-                            <h1
-                                class="text-xl sm:text-2xl font-bold text-gray-900"
-                            >
-
-                                {{ $displayLastName }},
-                                {{ $displayFirstName }}
-
-                                @if ($displayMiddleName)
-                                    {{ $displayMiddleName }}
-                                @endif
-
-                            </h1>
-
-
-                            <div
-                                class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-gray-500"
-                            >
-
-                                <span>
-                                    ID:
-                                    <strong class="text-gray-700">
-                                        {{ $displayMemberId }}
-                                    </strong>
-                                </span>
-
-                                <span class="hidden sm:inline">
-                                    •
-                                </span>
-
-                                <span>
-                                    Type:
-                                    <strong class="text-gray-700">
-                                        {{ $displayMemberType }}
-                                    </strong>
-                                </span>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- TIME --}}
-                    <div
-                        class="lg:text-right border-t lg:border-t-0 pt-4 lg:pt-0"
-                    >
-
-                        <div
-                            class="text-xs font-semibold uppercase tracking-wider text-gray-400"
-                        >
-                            Time In
-                        </div>
-
-                        <div
-                            class="text-2xl sm:text-3xl font-bold text-green-600 font-mono"
-                        >
-                            {{ $displayTimeIn }}
-                        </div>
-
-                        <div
-                            class="text-xs text-gray-400 mt-1"
-                        >
-                            {{ now()->format('l, F d, Y') }}
-                        </div>
-
-                    </div>
-
-                </div>
-
-            @endif
-
-        </div>
-
-
-        {{-- ========================================================= --}}
-        {{-- MAIN GRID --}}
-        {{-- ========================================================= --}}
-
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-
-
-            {{-- ===================================================== --}}
-            {{-- LEFT COLUMN --}}
-            {{-- ===================================================== --}}
-
-            <div class="lg:col-span-1 space-y-6">
-
-
-                {{-- ================================================= --}}
-                {{-- REGISTERED MEMBERS --}}
-                {{-- ================================================= --}}
-
-                <div
-                    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-                >
-
-                    <div
-                        class="flex items-center gap-2 text-gray-500 text-sm font-medium mb-3"
-                    >
-
-                        <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8z"
-                            />
-                        </svg>
-
-                        Registered Participants
-
-                    </div>
-
-
-                    <div
-                        class="text-4xl font-bold text-gray-900"
-                    >
-                        {{ $this->totalRegistered }}
-                    </div>
-
-
-                    {{-- OVERALL PROGRAM ATTENDANCE --}}
-                    <div
-                        class="mt-5 pt-4 border-t border-gray-100"
-                    >
-
-                        <div class="text-xs text-gray-400 mb-1">
-                            Total Attendance
-                        </div>
-
-                        <div
-                            class="text-2xl font-bold text-gray-900"
-                        >
-                            {{ $this->totalAttendance }}
-                        </div>
-
-                        <div class="text-xs text-gray-400 mt-1">
-                            All dates
-                        </div>
-
-                    </div>
-
-
-                    {{-- PROGRESS --}}
-                    <div
-                        class="mt-4 h-1.5 bg-gray-100 rounded-full overflow-hidden"
-                    >
-
-                        <div
-                            class="h-full bg-blue-500 rounded-full"
-                            style="
-                                width:
-                                {{
-                                    $this->totalRegistered > 0
-                                        ? min(
-                                            100,
-                                            round(
-                                                ($this->totalAttendance / $this->totalRegistered) * 100
-                                            )
-                                        )
-                                        : 0
-                                }}%
-                            "
-                        ></div>
-
-                    </div>
-
-
-                    <div
-                        class="text-xs text-gray-400 mt-2"
-                    >
-
-                        {{ $this->totalAttendance }}
-
-                        checked in
-
-                        (
-                        {{
-                            $this->totalRegistered > 0
-                                ? round(
-                                    ($this->totalAttendance / $this->totalRegistered) * 100
-                                )
-                                : 0
-                        }}%
-                        )
-
-                    </div>
-
-                </div>
-
-
-                {{-- ================================================= --}}
-                {{-- TIME IN CARD --}}
-                {{-- ================================================= --}}
-
-                <div
-                    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-                >
-
-                    <label
-                        for="memberId"
-                        class="block text-sm font-semibold text-gray-700 mb-3"
-                    >
-                        Scan / Enter Member ID
-                    </label>
-
-
-                    <input
-                        id="memberId"
-                        type="text"
-                        wire:model="memberId"
-                        wire:keydown.enter="timeIn"
-                        autofocus
-                        autocomplete="off"
-                        class="w-full text-xl text-center tracking-widest border-2 border-gray-200 rounded-xl px-3 py-4 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none mb-3"
-                        placeholder="Member ID"
-                    >
-
-
-                    <button
-                        wire:click="timeIn"
-                        wire:loading.attr="disabled"
-                        class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-blue-600/20"
-                    >
-
-                        <span wire:loading.remove wire:target="timeIn">
-                            TIME IN
-                        </span>
-
-                        <span wire:loading wire:target="timeIn">
-                            RECORDING...
-                        </span>
-
-                    </button>
-
-
-                    {{-- MESSAGE --}}
-                    @if ($message)
-
-                        <div
-                            wire:key="message-{{ md5($message . now()->timestamp) }}"
-                            x-data="{ show: true }"
-                            x-init="
-                                setTimeout(() => {
-                                    show = false;
-                                    $wire.set('message', null);
-                                }, 4000)
-                            "
-                            x-show="show"
-                            x-transition
-                            class="mt-4 p-3 rounded-lg text-sm font-medium text-center
-                            {{
-                                $messageType === 'success'
-                                    ? 'bg-green-50 text-green-700 border border-green-200'
-                                    : 'bg-red-50 text-red-700 border border-red-200'
-                            }}"
-                        >
-
-                            {{ $message }}
-
-                        </div>
-
-                    @endif
-
-                </div>
-
-            </div>
-
-
-            {{-- ===================================================== --}}
-            {{-- CENTER + RIGHT --}}
-            {{-- ===================================================== --}}
-
-            <div class="lg:col-span-3 space-y-6">
-
-
-                {{-- ================================================= --}}
-                {{-- TODAY'S ATTENDANCE --}}
-                {{-- ================================================= --}}
-
-                <div
-                    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-                >
-
-                    <div
-                        class="flex items-center justify-between mb-5"
-                    >
-
-                        <h2 class="font-bold text-gray-900">
-                            Today's Attendance
-                        </h2>
-
-                        <span class="text-xs text-gray-400">
-                            {{ now()->format('F d, Y') }}
-                        </span>
-
-                    </div>
-
-
-                    <div
-                        class="grid grid-cols-2 md:grid-cols-5 gap-4"
-                    >
-
-                        {{-- TODAY TOTAL --}}
-                        <div
-                            class="bg-slate-50 rounded-xl p-4"
-                        >
-
-                            <div
-                                class="flex items-center gap-2 text-gray-500 text-xs font-medium mb-2"
-                            >
-
-                                <span
-                                    class="w-2 h-2 rounded-full bg-slate-400"
-                                ></span>
-
-                                Today's Total
-
-                            </div>
-
-                            <div
-                                class="text-2xl font-bold text-gray-900"
-                            >
-                                {{ $this->todayAttendance }}
-                            </div>
-
-                        </div>
-
-
-                        {{-- RM --}}
-                        <div
-                            class="bg-blue-50 rounded-xl p-4"
-                        >
-
-                            <div
-                                class="flex items-center gap-2 text-blue-600 text-xs font-medium mb-2"
-                            >
-
-                                <span
-                                    class="w-2 h-2 rounded-full bg-blue-500"
-                                ></span>
-
-                                Regular Member
-
-                            </div>
-
-                            <div
-                                class="text-2xl font-bold text-blue-600"
-                            >
-                                {{ $this->todayRmCount }}
-                            </div>
-
-                            <div
-                                class="text-xs text-blue-400 mt-1"
-                            >
-                                RM
-                            </div>
-
-                        </div>
-
-
-                        {{-- LM --}}
-                        <div
-                            class="bg-purple-50 rounded-xl p-4"
-                        >
-
-                            <div
-                                class="flex items-center gap-2 text-purple-600 text-xs font-medium mb-2"
-                            >
-
-                                <span
-                                    class="w-2 h-2 rounded-full bg-purple-500"
-                                ></span>
-
-                                Life Member
-
-                            </div>
-
-                            <div
-                                class="text-2xl font-bold text-purple-600"
-                            >
-                                {{ $this->todayLmCount }}
-                            </div>
-
-                            <div
-                                class="text-xs text-purple-400 mt-1"
-                            >
-                                LM
-                            </div>
-
-                        </div>
-
-
-                        {{-- TM --}}
-                        <div
-                            class="bg-amber-50 rounded-xl p-4"
-                        >
-
-                            <div
-                                class="flex items-center gap-2 text-amber-600 text-xs font-medium mb-2"
-                            >
-
-                                <span
-                                    class="w-2 h-2 rounded-full bg-amber-500"
-                                ></span>
-
-                                Trainee Member
-
-                            </div>
-
-                            <div
-                                class="text-2xl font-bold text-amber-600"
-                            >
-                                {{ $this->todayTmCount }}
-                            </div>
-
-                            <div
-                                class="text-xs text-amber-400 mt-1"
-                            >
-                                TM
-                            </div>
-
-                        </div>
-
-
-                        {{-- NM --}}
-                        <div
-                            class="bg-gray-50 rounded-xl p-4"
-                        >
-
-                            <div
-                                class="flex items-center gap-2 text-gray-600 text-xs font-medium mb-2"
-                            >
-
-                                <span
-                                    class="w-2 h-2 rounded-full bg-gray-500"
-                                ></span>
-
-                                Non-Member
-
-                            </div>
-
-                            <div
-                                class="text-2xl font-bold text-gray-600"
-                            >
-                                {{ $this->todayNmCount }}
-                            </div>
-
-                            <div
-                                class="text-xs text-gray-400 mt-1"
-                            >
-                                NM
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                {{-- ================================================= --}}
-                {{-- RECENT CHECK-INS + DAILY SUMMARY --}}
-                {{-- ================================================= --}}
-
-                <div
-                    class="grid grid-cols-1 xl:grid-cols-3 gap-6"
-                >
-
-
-                    {{-- ================================================= --}}
-                    {{-- RECENT CHECK-INS --}}
-                    {{-- ================================================= --}}
-
-                    <div
-                        class="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-                    >
-
-                        <div
-                            class="px-6 py-5 border-b flex items-center justify-between"
-                        >
-
-                            <h2 class="font-bold text-gray-900">
-                                Recent Check-Ins
-                            </h2>
-
-                            <span class="text-xs text-gray-400">
-                                Today, latest first
-                            </span>
-
-                        </div>
-
-
-                        <div
-                            class="divide-y divide-gray-100 max-h-[420px] overflow-y-auto"
-                        >
-
-                            @forelse ($this->recentCheckIns as $checkIn)
-
-                                @php
-
-                                    $badgeColor = match($checkIn->mem_type) {
-
-                                        'RM' =>
-                                            'bg-blue-100 text-blue-700',
-
-                                        'LM' =>
-                                            'bg-purple-100 text-purple-700',
-
-                                        'TM' =>
-                                            'bg-amber-100 text-amber-700',
-
-                                        'NM' =>
-                                            'bg-gray-100 text-gray-700',
-
-                                        default =>
-                                            'bg-gray-100 text-gray-700',
-
-                                    };
-
-
-                                    $initials = strtoupper(
-                                        substr($checkIn->first_name ?? '', 0, 1)
-                                        .
+                                    {{ strtoupper(
+                                        substr($checkIn->first_name ?? '', 0, 1) .
                                         substr($checkIn->last_name ?? '', 0, 1)
-                                    );
+                                    ) }}
+                                </div>
 
-                                @endphp
+                                {{-- NAME AND ID --}}
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate font-semibold text-slate-900">
+                                        {{ $checkIn->last_name }},
+                                        {{ $checkIn->first_name }}
+                                        {{ $checkIn->middle_name }}
+                                    </p>
 
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        ID: {{ $checkIn->member_id_no }}
+                                    </p>
+                                </div>
 
-                                <div
-                                    class="px-6 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors"
-                                >
-
-                                    {{-- INITIALS --}}
-                                    <div
-                                        class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-600 flex-shrink-0"
+                                {{-- TYPE AND TIME --}}
+                                <div class="shrink-0 text-right">
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold
+                                        {{ match ($checkIn->mem_type) {
+                                            'RM' => 'bg-blue-100 text-blue-700',
+                                            'LM' => 'bg-purple-100 text-purple-700',
+                                            'TM' => 'bg-amber-100 text-amber-700',
+                                            'NM' => 'bg-gray-200 text-gray-700',
+                                            default => 'bg-slate-100 text-slate-700'
+                                        } }}"
                                     >
-
-                                        {{ $initials ?: '?' }}
-
-                                    </div>
-
-
-                                    {{-- MEMBER --}}
-                                    <div
-                                        class="flex-1 min-w-0"
-                                    >
-
-                                        <div
-                                            class="font-semibold text-gray-900 truncate"
-                                        >
-
-                                            {{ $checkIn->first_name }}
-                                            {{ $checkIn->last_name }}
-
-                                        </div>
-
-                                        <div
-                                            class="text-xs text-gray-400"
-                                        >
-
-                                            ID:
-                                            {{ $checkIn->member_id_no }}
-
-                                        </div>
-
-                                    </div>
-
-
-                                    {{-- TYPE --}}
-                                    <span
-                                        class="text-xs font-bold px-2.5 py-1 rounded-full {{ $badgeColor }}"
-                                    >
-
                                         {{ $checkIn->mem_type }}
-
                                     </span>
 
-
-                                    {{-- TIME --}}
-                                    <div
-                                        class="text-sm font-mono text-gray-500 w-16 text-right"
-                                    >
-
-                                        {{ \Carbon\Carbon::parse($checkIn->time_in)->format('h:i A') }}
-
-                                    </div>
-
+                                    <p class="mt-1 text-sm font-semibold tabular-nums text-slate-700">
+                                        {{ \Carbon\Carbon::parse($checkIn->time_in)->format('h:i:s A') }}
+                                    </p>
                                 </div>
-
-
-                            @empty
-
-                                <div
-                                    class="px-6 py-14 text-center text-gray-400"
-                                >
-
-                                    <svg
-                                        class="w-10 h-10 mx-auto mb-3 text-gray-300"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        stroke-width="1.5"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                    </svg>
-
-                                    No check-ins yet today.
-
-                                </div>
-
-                            @endforelse
-
-                        </div>
-
+                            </div>
+                        @endforeach
                     </div>
-
-
-                    {{-- ================================================= --}}
-                    {{-- DAILY SUMMARY --}}
-                    {{-- ================================================= --}}
-
-                    <div
-                        class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-                    >
-
-                        <h2
-                            class="font-bold text-gray-900 mb-5"
-                        >
-                            Daily Summary
-                        </h2>
-
-
-                        <div
-                            class="space-y-4 max-h-[380px] overflow-y-auto pr-1"
-                        >
-
-                            @forelse ($this->dailyAttendance as $attendance)
-
-                                <div
-                                    class="p-4 bg-slate-50 rounded-xl"
-                                >
-
-                                    <div
-                                        class="flex items-center justify-between mb-2"
-                                    >
-
-                                        <span
-                                            class="text-sm font-semibold text-gray-900"
-                                        >
-
-                                            {{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}
-
-                                        </span>
-
-
-                                        <span
-                                            class="text-lg font-bold text-gray-900"
-                                        >
-
-                                            {{ $attendance->total }}
-
-                                        </span>
-
-                                    </div>
-
-
-                                    {{-- MEMBER TYPE BAR --}}
-                                    <div
-                                        class="flex gap-1.5 h-1.5 rounded-full overflow-hidden"
-                                    >
-
-                                        @php
-                                            $total = max($attendance->total, 1);
-                                        @endphp
-
-
-                                        <div
-                                            class="bg-blue-500"
-                                            style="
-                                                width:
-                                                {{ ($attendance->rm / $total) * 100 }}%
-                                            "
-                                        ></div>
-
-
-                                        <div
-                                            class="bg-purple-500"
-                                            style="
-                                                width:
-                                                {{ ($attendance->lm / $total) * 100 }}%
-                                            "
-                                        ></div>
-
-
-                                        <div
-                                            class="bg-amber-500"
-                                            style="
-                                                width:
-                                                {{ ($attendance->tm / $total) * 100 }}%
-                                            "
-                                        ></div>
-
-
-                                        <div
-                                            class="bg-gray-400"
-                                            style="
-                                                width:
-                                                {{ ($attendance->nm / $total) * 100 }}%
-                                            "
-                                        ></div>
-
-                                    </div>
-
-
-                                    {{-- COUNTS --}}
-                                    <div
-                                        class="flex flex-wrap gap-3 mt-2 text-xs text-gray-400"
-                                    >
-
-                                        <span>
-                                            RM {{ $attendance->rm }}
-                                        </span>
-
-                                        <span>
-                                            LM {{ $attendance->lm }}
-                                        </span>
-
-                                        <span>
-                                            TM {{ $attendance->tm }}
-                                        </span>
-
-                                        <span>
-                                            NM {{ $attendance->nm }}
-                                        </span>
-
-                                    </div>
-
-                                </div>
-
-                            @empty
-
-                                <div
-                                    class="text-center text-gray-400 py-10 text-sm"
-                                >
-                                    No records yet.
-                                </div>
-
-                            @endforelse
-
-                        </div>
-
-                    </div>
-
-                </div>
-
+                @endif
             </div>
-
         </div>
-
     </div>
 
+    {{-- DAILY ATTENDANCE SUMMARY --}}
+    <div class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="mb-6">
+            <h2 class="text-lg font-bold text-slate-900">
+                Daily Attendance Summary
+            </h2>
+
+            <p class="mt-1 text-sm text-slate-500">
+                Attendance totals by date and member classification
+            </p>
+        </div>
+
+        @if ($this->dailyAttendance->isEmpty())
+            <div class="rounded-xl border border-dashed border-slate-300 py-10 text-center">
+                <p class="font-semibold text-slate-700">
+                    No attendance records available
+                </p>
+
+                <p class="mt-1 text-sm text-slate-500">
+                    Daily totals will appear after participants check in.
+                </p>
+            </div>
+        @else
+            {{-- LEGEND --}}
+            <div class="mb-5 flex flex-wrap gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="h-3 w-3 rounded-sm bg-blue-600"></span>
+                    <span class="text-sm text-slate-600">RM</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span class="h-3 w-3 rounded-sm bg-purple-600"></span>
+                    <span class="text-sm text-slate-600">LM</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span class="h-3 w-3 rounded-sm bg-amber-500"></span>
+                    <span class="text-sm text-slate-600">TM</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span class="h-3 w-3 rounded-sm bg-gray-500"></span>
+                    <span class="text-sm text-slate-600">NM</span>
+                </div>
+            </div>
+
+            {{-- DAILY ROWS --}}
+            <div class="space-y-5">
+                @foreach ($this->dailyAttendance as $day)
+                    @php
+                        $total = (int) ($day->total ?? 0);
+                        $rm = (int) ($day->rm_count ?? 0);
+                        $lm = (int) ($day->lm_count ?? 0);
+                        $tm = (int) ($day->tm_count ?? 0);
+                        $nm = (int) ($day->nm_count ?? 0);
+
+                        $rmWidth = $total > 0 ? ($rm / $total) * 100 : 0;
+                        $lmWidth = $total > 0 ? ($lm / $total) * 100 : 0;
+                        $tmWidth = $total > 0 ? ($tm / $total) * 100 : 0;
+                        $nmWidth = $total > 0 ? ($nm / $total) * 100 : 0;
+                    @endphp
+
+                    <div
+                        wire:key="daily-attendance-{{ $day->date }}"
+                        class="rounded-xl border border-slate-200 p-4"
+                    >
+                        <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <p class="font-semibold text-slate-800">
+                                {{ \Carbon\Carbon::parse($day->date)->format('D, M d, Y') }}
+                            </p>
+
+                            <p class="text-sm font-bold text-slate-900">
+                                {{ $total }} total
+                            </p>
+                        </div>
+
+                        {{-- STACKED ATTENDANCE BAR --}}
+                        <div class="flex h-3 w-full overflow-hidden rounded-full bg-slate-100">
+                            @if ($rmWidth > 0)
+                                <div
+                                    class="h-full bg-blue-600"
+                                    style="width: {{ $rmWidth }}%"
+                                    title="RM: {{ $rm }}"
+                                ></div>
+                            @endif
+
+                            @if ($lmWidth > 0)
+                                <div
+                                    class="h-full bg-purple-600"
+                                    style="width: {{ $lmWidth }}%"
+                                    title="LM: {{ $lm }}"
+                                ></div>
+                            @endif
+
+                            @if ($tmWidth > 0)
+                                <div
+                                    class="h-full bg-amber-500"
+                                    style="width: {{ $tmWidth }}%"
+                                    title="TM: {{ $tm }}"
+                                ></div>
+                            @endif
+
+                            @if ($nmWidth > 0)
+                                <div
+                                    class="h-full bg-gray-500"
+                                    style="width: {{ $nmWidth }}%"
+                                    title="NM: {{ $nm }}"
+                                ></div>
+                            @endif
+                        </div>
+
+                        {{-- SEPARATE DAILY COUNTS --}}
+                        <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            <div class="rounded-lg bg-blue-50 px-3 py-2">
+                                <p class="text-xs font-medium text-blue-700">
+                                    Regular Member (RM)
+                                </p>
+
+                                <p class="mt-1 text-xl font-bold text-blue-800">
+                                    {{ $rm }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-lg bg-purple-50 px-3 py-2">
+                                <p class="text-xs font-medium text-purple-700">
+                                    Life Member (LM)
+                                </p>
+
+                                <p class="mt-1 text-xl font-bold text-purple-800">
+                                    {{ $lm }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-lg bg-amber-50 px-3 py-2">
+                                <p class="text-xs font-medium text-amber-700">
+                                    Trainee Member (TM)
+                                </p>
+
+                                <p class="mt-1 text-xl font-bold text-amber-800">
+                                    {{ $tm }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-lg bg-gray-50 px-3 py-2">
+                                <p class="text-xs font-medium text-gray-600">
+                                    Non-Member (NM)
+                                </p>
+
+                                <p class="mt-1 text-xl font-bold text-gray-800">
+                                    {{ $nm }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+
+    <style>
+        @keyframes summary-progress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+    </style>
 </div>

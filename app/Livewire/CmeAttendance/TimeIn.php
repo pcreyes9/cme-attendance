@@ -20,6 +20,8 @@ class TimeIn extends Component
 
     public ?string $messageType = null;
 
+    public string $recentSearch = '';
+
 
     /*
     |--------------------------------------------------------------------------
@@ -597,50 +599,33 @@ class TimeIn extends Component
     | DAILY ATTENDANCE
     |--------------------------------------------------------------------------
     */
-
     public function getDailyAttendanceProperty()
     {
         return CmeAttendance::query()
-            ->selectRaw("
-                date,
-                COUNT(*) as total,
-
-                SUM(
-                    CASE
-                        WHEN mem_type = 'RM'
-                        THEN 1
-                        ELSE 0
-                    END
-                ) as rm,
-
-                SUM(
-                    CASE
-                        WHEN mem_type = 'LM'
-                        THEN 1
-                        ELSE 0
-                    END
-                ) as lm,
-
-                SUM(
-                    CASE
-                        WHEN mem_type = 'TM'
-                        THEN 1
-                        ELSE 0
-                    END
-                ) as tm,
-
-                SUM(
-                    CASE
-                        WHEN mem_type = 'NM'
-                        THEN 1
-                        ELSE 0
-                    END
-                ) as nm
-            ")
             ->where('cme_year', $this->cmeYear)
             ->where('cme_program_code', $this->cmeProgramCode)
-            ->groupBy('date')
-            ->orderByDesc('date')
+            ->selectRaw("
+                CAST([date] AS DATE) AS [date],
+                COUNT(*) AS [total],
+                SUM(CASE
+                    WHEN UPPER(LTRIM(RTRIM(mem_type))) = 'RM'
+                    THEN 1 ELSE 0
+                END) AS [rm_count],
+                SUM(CASE
+                    WHEN UPPER(LTRIM(RTRIM(mem_type))) = 'LM'
+                    THEN 1 ELSE 0
+                END) AS [lm_count],
+                SUM(CASE
+                    WHEN UPPER(LTRIM(RTRIM(mem_type))) = 'TM'
+                    THEN 1 ELSE 0
+                END) AS [tm_count],
+                SUM(CASE
+                    WHEN UPPER(LTRIM(RTRIM(mem_type))) = 'NM'
+                    THEN 1 ELSE 0
+                END) AS [nm_count]
+            ")
+            ->groupByRaw('CAST([date] AS DATE)')
+            ->orderByRaw('CAST([date] AS DATE) DESC')
             ->get();
     }
 
@@ -683,8 +668,19 @@ class TimeIn extends Component
             ->where('cme_year', $this->cmeYear)
             ->where('cme_program_code', $this->cmeProgramCode)
             ->whereDate('date', today())
+            ->when(trim($this->recentSearch) !== '', function ($query) {
+                $search = '%' . trim($this->recentSearch) . '%';
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('member_id_no', 'LIKE', $search)
+                        ->orWhere('first_name', 'LIKE', $search)
+                        ->orWhere('last_name', 'LIKE', $search)
+                        ->orWhere('middle_name', 'LIKE', $search)
+                        ->orWhere('mem_type', 'LIKE', $search);
+                });
+            })
             ->orderByDesc('time_in')
-            ->limit(8)
+            ->limit(50)
             ->get();
     }
 
