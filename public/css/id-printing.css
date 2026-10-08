@@ -1,0 +1,345 @@
+/*
+|--------------------------------------------------------------------------
+| ID CARD CANVAS
+|--------------------------------------------------------------------------
+*/
+
+.id-card-canvas {
+    position: relative;
+
+    width: 100%;
+
+    aspect-ratio: 2048 / 768;
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+    font-family:
+        Aptos,
+        "Aptos Display",
+        "Segoe UI",
+        Arial,
+        sans-serif;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| BACKGROUND
+|--------------------------------------------------------------------------
+*/
+
+.id-card-canvas > img {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: fill;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| QR CODE
+|--------------------------------------------------------------------------
+|
+| Target:
+| Upper-left portion of the blank area.
+|
+*/
+
+.id-qr {
+    position: absolute;
+
+    left: 1.7%;
+    top: 28%;
+
+    width: 13.5%;
+    aspect-ratio: 1 / 1;
+
+    background: transparent;
+
+    padding: 0;
+
+    z-index: 10;
+}
+
+.id-qr img {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| MAIN MEMBER NAME
+|--------------------------------------------------------------------------
+|
+| The name sits to the right of the QR.
+|
+*/
+
+.id-main-name {
+    position: absolute;
+
+    left: 17.0%;
+    top: 34.5%;
+
+    width: 31.5%;
+    height: 40%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 0 1%;
+
+    font-family:
+        Aptos,
+        "Aptos Display",
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 18px;
+
+    font-weight: 700;
+
+    line-height: 1.08;
+
+    letter-spacing: 0;
+
+    text-transform: uppercase;
+
+    color: #000000;
+
+    overflow: hidden;
+
+    z-index: 10;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| PSA ID
+|--------------------------------------------------------------------------
+|
+| Directly below QR.
+|
+*/
+
+.id-main-psa {
+    position: absolute;
+
+    left: 1.7%;
+    top: 66.8%;
+
+    width: 13.5%;
+
+    text-align: center;
+
+    font-family:
+        Aptos,
+        "Aptos Display",
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 8px;
+
+    font-weight: 600;
+
+    line-height: 1.15;
+
+    color: #000000;
+
+    z-index: 10;
+}
+
+.id-main-psa strong {
+    display: inline;
+
+    margin-left: 3px;
+
+    font-size: 16px;
+
+    font-weight: 700;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| RAFFLE STUB NAME
+|--------------------------------------------------------------------------
+|
+| Centered below RAFFLE STUB.
+|
+*/
+
+.id-raffle-name {
+    position: absolute;
+
+    left: 52.0%;
+    top: 69.0%;
+
+    width: 21.5%;
+    height: 12%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 0 1%;
+
+    font-family:
+        Aptos,
+        "Aptos Display",
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 8px;
+
+    font-weight: 700;
+
+    line-height: 1.05;
+
+    letter-spacing: 0;
+
+    text-transform: uppercase;
+
+    color: #000000;
+
+    overflow: hidden;
+
+    z-index: 10;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| RAFFLE REFERENCE
+|--------------------------------------------------------------------------
+*/
+
+.id-raffle-reference {
+    position: absolute;
+
+    left: 52.0%;
+    top: 79.5%;
+
+    width: 21.5%;
+
+    text-align: center;
+
+    font-family:
+        Aptos,
+        "Aptos Display",
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+    line-height: 1.15;
+
+    color: #000000;
+
+    z-index: 10;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| RESPONSIVE PREVIEW
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 1200px) {
+
+    .id-main-name {
+        font-size: 24px;
+    }
+
+    .id-main-psa {
+        font-size: 11px;
+    }
+
+    .id-main-psa strong {
+        font-size: 14px;
+    }
+
+    .id-raffle-name {
+        font-size: 13px;
+    }
+
+    .id-raffle-reference {
+        font-size: 10px;
+    }
+}
+
+
+@media (max-width: 900px) {
+
+    .id-main-name {
+        font-size: 20px;
+    }
+
+    .id-main-psa {
+        font-size: 9px;
+    }
+
+    .id-main-psa strong {
+        font-size: 12px;
+    }
+
+    .id-raffle-name {
+        font-size: 10px;
+    }
+
+    .id-raffle-reference {
+        font-size: 8px;
+    }
+}
+
+
+@media (max-width: 640px) {
+
+    .id-main-name {
+        font-size: 15px;
+    }
+
+    .id-main-psa {
+        font-size: 7px;
+    }
+
+    .id-main-psa strong {
+        font-size: 9px;
+    }
+
+    .id-raffle-name {
+        font-size: 8px;
+    }
+
+    .id-raffle-reference {
+        font-size: 6px;
+    }
+}

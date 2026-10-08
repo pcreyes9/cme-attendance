@@ -52,10 +52,18 @@ new class extends Component
 
                         <x-nav-link
                             href="{{ url('/') }}"
-                            :active="request()->routeIs('/')"
+                            :active="request()->routeIs('cme-attendance')"
                             wire:navigate
                         >
                             {{ __('Time In') }}
+                        </x-nav-link>
+
+                        <x-nav-link
+                            :href="route('id-printing')"
+                            :active="request()->routeIs('id-printing')"
+                            wire:navigate
+                        >
+                            {{ __('ID Printing') }}
                         </x-nav-link>
 
                         <x-nav-link
@@ -65,7 +73,7 @@ new class extends Component
                         >
                             {{ __('Attendance Records') }}
                         </x-nav-link>
-                        
+
                         <x-nav-link
                             :href="route('manual-attendance')"
                             :active="request()->routeIs('manual-attendance')"
@@ -91,6 +99,14 @@ new class extends Component
                             wire:navigate
                         >
                             {{ __('Time In') }}
+                        </x-nav-link>
+
+                        <x-nav-link
+                            :href="route('id-printing')"
+                            :active="request()->routeIs('id-printing')"
+                            wire:navigate
+                        >
+                            {{ __('ID Printing') }}
                         </x-nav-link>
 
                     @endauth

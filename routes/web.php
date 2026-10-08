@@ -6,9 +6,13 @@ use Illuminate\Support\Facades\Route;
 use App\Livewire\CmeAttendance\TimeIn;
 use App\Livewire\ManualAttendance;
 use App\Livewire\Reports;
+use App\Livewire\CmeAttendance\IdPrinting;
 
 Route::get('/', TimeIn::class)
-    ->name('cme-attendance.time-in');
+    ->name('cme-attendance');
+
+Route::get('/id-printing', IdPrinting::class)
+    ->name('id-printing');
 
 Route::get('dashboard', AdminDashboard::class)
     ->middleware(['auth', 'verified'])
