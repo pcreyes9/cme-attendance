@@ -1,247 +1,160 @@
 /*
 |--------------------------------------------------------------------------
-| ID CARD CANVAS
+| PSA CME PARTICIPANT ID — PREVIEW
 |--------------------------------------------------------------------------
+| The print layout is based on the supplied 14 x 8.5 inch reference PDF.
+| No background artwork is used. The page remains plain white.
 */
 
 .id-card-canvas {
     position: relative;
     width: 100%;
-    aspect-ratio: 2048 / 768;
+    aspect-ratio: 14 / 8.5;
     overflow: hidden;
-    background: #ffffff;
-    font-family: Aptos, "Aptos Display", "Segoe UI", Arial, sans-serif;
+    background: #fff;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
-/*
-|--------------------------------------------------------------------------
-| BACKGROUND ARTWORK
-|--------------------------------------------------------------------------
-*/
-
-.id-card-canvas > img {
+/* QR code */
+.id-card-canvas .id-qr {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: fill;
-}
-
-/*
-|--------------------------------------------------------------------------
-| QR CODE
-|--------------------------------------------------------------------------
-*/
-
-.id-qr {
-    position: absolute;
-    left: 1.7%;
-    top: 28%;
-    width: 13.5%;
+    left: 44.57%;
+    top: 44.59%;
+    width: 6.72%;
     aspect-ratio: 1 / 1;
     padding: 0;
+    margin: 0;
     background: transparent;
-    z-index: 10;
+    z-index: 2;
 }
 
-.id-qr img {
+.id-card-canvas .id-qr img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
 }
 
-/*
-|--------------------------------------------------------------------------
-| MAIN MEMBER NAME
-|--------------------------------------------------------------------------
-*/
-
-.id-main-name {
+/* Main participant name */
+.id-card-canvas .id-main-name {
     position: absolute;
-    left: 17%;
-    top: 34.5%;
-    width: 31.5%;
-    height: 40%;
-
+    left: 52.68%;
+    top: 45.41%;
+    width: 19.2%;
+    height: 8.1%;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    padding: 0 1%;
-    text-align: center;
-
-    font-family: Aptos, "Aptos Display", "Segoe UI", Arial, sans-serif;
-    font-size: 18px;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: clamp(8px, 1.65vw, 16pt);
     font-weight: 700;
     line-height: 1.08;
-    letter-spacing: 0;
-    text-transform: uppercase;
-
-    color: #000000;
-    overflow: hidden;
-    overflow-wrap: anywhere;
-    z-index: 10;
-}
-
-/*
-|--------------------------------------------------------------------------
-| PSA ID — BELOW THE QR CODE
-|--------------------------------------------------------------------------
-*/
-
-.id-main-psa {
-    position: absolute;
-    left: 1.7%;
-    top: 66.8%;
-    width: 13.5%;
-
     text-align: center;
-
-    font-family: Aptos, "Aptos Display", "Segoe UI", Arial, sans-serif;
-    font-size: 8px;
-    font-weight: 600;
-    line-height: 1.15;
-
-    color: #000000;
-    z-index: 10;
+    text-transform: uppercase;
+    overflow-wrap: normal;
+    z-index: 2;
 }
 
-.id-main-psa strong {
+.id-card-canvas .id-main-name span {
+    display: block;
+    max-width: 100%;
+}
+
+/* PSA member number below QR */
+.id-card-canvas .id-main-psa {
+    position: absolute;
+    left: 44.57%;
+    top: 56.54%;
+    width: 6.72%;
+    margin: 0;
+    padding: 0;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: clamp(5px, 0.65vw, 6.5pt);
+    font-weight: 400;
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+    z-index: 2;
+}
+
+.id-card-canvas .id-main-psa strong {
+    margin-left: 2px;
+    font-size: inherit;
+    font-weight: 700;
+}
+
+/* Raffle name — vertical, matching the reference layout */
+.id-card-canvas .id-raffle-name {
+    position: absolute;
+    left: 73.64%;
+    top: 62.71%;
+    width: 15.57%;
+    height: 2.35%;
+    display: block;
+    margin: 0;
+    padding: 0;
+    transform: rotate(-90deg);
+    transform-origin: top left;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: clamp(5px, 0.72vw, 7.2pt);
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: visible;
+    z-index: 2;
+}
+
+.id-card-canvas .id-raffle-name span {
     display: inline;
-    margin-left: 3px;
-    font-size: 10px;
-    font-weight: 700;
 }
 
-/*
-|--------------------------------------------------------------------------
-| RAFFLE STUB NAME — HORIZONTAL
-|--------------------------------------------------------------------------
-*/
-
-.id-raffle-name {
+/* Raffle/reference number — vertical beside the name */
+.id-card-canvas .id-raffle-reference {
     position: absolute;
-    left: 52%;
-    top: 69%;
-    width: 21.5%;
-    height: 12%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 0 1%;
+    left: 75.36%;
+    top: 62.71%;
+    width: 7.29%;
+    height: 1.88%;
+    display: block;
+    margin: 0;
+    padding: 0;
+    transform: rotate(-90deg);
+    transform-origin: top left;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: clamp(4px, 0.55vw, 5.5pt);
+    font-weight: 400;
+    line-height: 1;
     text-align: center;
-
-    font-family: Aptos, "Aptos Display", "Segoe UI", Arial, sans-serif;
-    font-size: 8px;
-    font-weight: 700;
-    line-height: 1.05;
-    letter-spacing: 0;
-    text-transform: uppercase;
-
-    color: #000000;
-    overflow: hidden;
-    overflow-wrap: anywhere;
-    z-index: 10;
+    white-space: nowrap;
+    overflow: visible;
+    z-index: 2;
 }
 
-/*
-|--------------------------------------------------------------------------
-| RAFFLE REFERENCE NUMBER — HORIZONTAL
-|--------------------------------------------------------------------------
-*/
-
-.id-raffle-reference {
-    position: absolute;
-    left: 52%;
-    top: 79.5%;
-    width: 21.5%;
-
-    text-align: center;
-
-    font-family: Aptos, "Aptos Display", "Segoe UI", Arial, sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 1.15;
-
-    color: #000000;
-    overflow-wrap: anywhere;
-    z-index: 10;
-}
-
-/*
-|--------------------------------------------------------------------------
-| RESPONSIVE PREVIEW
-|--------------------------------------------------------------------------
-| These rules only change the preview's font sizes.
-| They do not rotate the text or change its horizontal layout.
-|--------------------------------------------------------------------------
-*/
-
-@media (max-width: 1200px) {
-    .id-main-name {
-        font-size: 18px;
-    }
-
-    .id-main-psa {
-        font-size: 8px;
-    }
-
-    .id-main-psa strong {
-        font-size: 10px;
-    }
-
-    .id-raffle-name {
-        font-size: 8px;
-    }
-
-    .id-raffle-reference {
-        font-size: 9px;
-    }
-}
-
-@media (max-width: 900px) {
-    .id-main-name {
-        font-size: 14px;
-    }
-
-    .id-main-psa {
-        font-size: 7px;
-    }
-
-    .id-main-psa strong {
-        font-size: 9px;
-    }
-
-    .id-raffle-name {
-        font-size: 7px;
-    }
-
-    .id-raffle-reference {
-        font-size: 7px;
-    }
-}
-
+/* Keep the preview readable on smaller screens without affecting print. */
 @media (max-width: 640px) {
-    .id-main-name {
-        font-size: 10px;
-    }
-
-    .id-main-psa {
-        font-size: 6px;
-    }
-
-    .id-main-psa strong {
+    .id-card-canvas .id-main-name {
         font-size: 7px;
     }
 
-    .id-raffle-name {
-        font-size: 6px;
+    .id-card-canvas .id-main-psa {
+        font-size: 4px;
     }
 
-    .id-raffle-reference {
-        font-size: 6px;
+    .id-card-canvas .id-raffle-name {
+        font-size: 4px;
+    }
+
+    .id-card-canvas .id-raffle-reference {
+        font-size: 3.5px;
     }
 }

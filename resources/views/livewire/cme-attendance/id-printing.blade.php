@@ -4,7 +4,6 @@
     <div class="mx-auto mb-6 max-w-6xl">
         <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-widest text-blue-600">
                         Philippine Society of Anesthesiologists
@@ -21,41 +20,25 @@
 
                 <div class="rounded-xl bg-slate-50 px-5 py-3 text-right">
                     <p class="text-xs text-slate-500">CME Program</p>
-
-                    <p class="text-lg font-bold text-slate-900">
-                        {{ $cmeProgramCode }}
-                    </p>
-
-                    <p class="text-xs text-slate-500">
-                        Year {{ $cmeYear }}
-                    </p>
+                    <p class="text-lg font-bold text-slate-900">{{ $cmeProgramCode }}</p>
+                    <p class="text-xs text-slate-500">Year {{ $cmeYear }}</p>
                 </div>
-
             </div>
         </div>
     </div>
-
 
     {{-- MAIN CONTENT --}}
     <div class="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-2">
 
         {{-- PARTICIPANT SEARCH --}}
         <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-
-            <h2 class="text-lg font-bold text-slate-900">
-                Find Participant
-            </h2>
-
+            <h2 class="text-lg font-bold text-slate-900">Find Participant</h2>
             <p class="mt-1 text-sm text-slate-500">
                 Scan or enter the PSA ID / participant ID.
             </p>
 
             <form wire:submit="searchMember" class="mt-6">
-
-                <label
-                    for="memberId"
-                    class="mb-2 block text-sm font-semibold text-slate-700"
-                >
+                <label for="memberId" class="mb-2 block text-sm font-semibold text-slate-700">
                     Participant ID
                 </label>
 
@@ -78,14 +61,11 @@
                     <span wire:loading.remove wire:target="searchMember">
                         Check Registration
                     </span>
-
                     <span wire:loading wire:target="searchMember">
                         Checking Registration...
                     </span>
                 </button>
-
             </form>
-
 
             {{-- STATUS MESSAGE --}}
             @if ($message)
@@ -98,7 +78,6 @@
                     }}"
                 >
                     <div class="flex items-start gap-3">
-
                         @if ($messageType === 'success')
                             <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700">
                                 ✓
@@ -109,14 +88,10 @@
                             </span>
                         @endif
 
-                        <div class="text-sm font-medium">
-                            {{ $message }}
-                        </div>
-
+                        <div class="text-sm font-medium">{{ $message }}</div>
                     </div>
                 </div>
             @endif
-
 
             {{-- INSTRUCTIONS --}}
             <div class="mt-6 rounded-xl bg-slate-50 p-4">
@@ -131,19 +106,13 @@
                     <li>• The QR code contains the participant ID.</li>
                 </ul>
             </div>
-
         </section>
-
 
         {{-- ID PREVIEW --}}
         <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-
             <div class="mb-5 flex items-center justify-between">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-900">
-                        ID Preview
-                    </h2>
-
+                    <h2 class="text-lg font-bold text-slate-900">ID Preview</h2>
                     <p class="text-sm text-slate-500">
                         Annual Convention 2026 Delegate
                     </p>
@@ -156,22 +125,9 @@
                 @endif
             </div>
 
-
             @if ($displayMemberId)
-
-                {{-- PRINTABLE ARTWORK --}}
-                <div
-                    id="printable-id"
-                    class="id-card-canvas"
-                >
-
-                    {{-- ORIGINAL BACKGROUND --}}
-                    <img
-                        src="{{ asset('images/ac2026-delegate.png') }}"
-                        alt="Annual Convention 2026 Delegate ID"
-                        class="id-card-background"
-                    >
-
+                {{-- PRINTABLE CONTENT ONLY: NO BACKGROUND ARTWORK --}}
+                <div id="printable-id" class="id-card-canvas" aria-label="Participant ID print layout">
 
                     {{-- TRANSPARENT QR CODE --}}
                     @if ($qrCode)
@@ -183,58 +139,41 @@
                         </div>
                     @endif
 
-
-                    {{-- MAIN NAME: HORIZONTAL --}}
+                    {{-- MAIN PARTICIPANT NAME --}}
                     <div class="id-main-name">
                         <span>
-                            {{ $displayFirstName }}
-                            @if ($displayMiddleName)
-                                {{ $displayMiddleName }}
-                            @endif
-                            {{ $displayLastName }}, MD
+                            {{ trim($displayFirstName . ' ' . ($displayMiddleName ?? '') . ' ' . $displayLastName) }}, MD
                         </span>
                     </div>
 
-
-                    {{-- PSA ID: BELOW QR --}}
+                    {{-- PSA ID BELOW QR CODE --}}
                     <div class="id-main-psa">
                         <span>PSA ID:</span>
                         <strong>{{ $displayMemberId }}</strong>
                     </div>
 
-
-                    {{-- RAFFLE NAME: HORIZONTAL --}}
+                    {{-- RAFFLE STUB NAME --}}
                     <div class="id-raffle-name">
                         <span>
-                            {{ $displayFirstName }}
-                            @if ($displayMiddleName)
-                                {{ $displayMiddleName }}
-                            @endif
-                            {{ $displayLastName }}, MD
+                            {{ trim($displayFirstName . ' ' . ($displayMiddleName ?? '') . ' ' . $displayLastName) }}, MD
                         </span>
                     </div>
 
-
-                    {{-- RAFFLE REFERENCE: HORIZONTAL --}}
+                    {{-- RAFFLE REFERENCE --}}
                     <div class="id-raffle-reference">
                         {{ $displayMemberId }} | {{ $referenceNumber }}
                     </div>
-
                 </div>
 
-
-                {{-- PRINT --}}
                 <button
                     type="button"
-                    onclick="printId()"
+                    onclick="window.printId()"
                     class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-4 font-bold text-white transition hover:bg-emerald-700"
                 >
                     <span>🖨</span>
                     Print ID
                 </button>
 
-
-                {{-- CLEAR --}}
                 <button
                     type="button"
                     wire:click="clear"
@@ -242,13 +181,10 @@
                 >
                     Clear
                 </button>
-
             @else
-
                 {{-- EMPTY PREVIEW --}}
                 <div class="flex min-h-[400px] items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50">
                     <div class="text-center">
-
                         <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl shadow-sm">
                             🪪
                         </div>
@@ -256,38 +192,27 @@
                         <p class="mt-4 font-semibold text-slate-700">
                             No participant selected
                         </p>
-
                         <p class="mt-1 text-sm text-slate-500">
                             Scan or enter an ID to check registration.
                         </p>
-
                     </div>
                 </div>
-
             @endif
-
         </section>
-
     </div>
-
 </div>
-
 
 {{-- PRINT SCRIPT --}}
 @script
 <script>
     window.printId = function () {
-        const idCard = document.getElementById('printable-id');
+        const printable = document.getElementById('printable-id');
 
-        if (!idCard) {
+        if (!printable) {
             return;
         }
 
-        const printWindow = window.open(
-            '',
-            '_blank',
-            'width=1400,height=700'
-        );
+        const printWindow = window.open('', '_blank', 'width=1400,height=900');
 
         if (!printWindow) {
             alert('Please allow pop-ups for this page so the ID can be printed.');
@@ -296,88 +221,25 @@
 
         const cssUrl = @js(asset('css/id-printing.css'));
 
-        /*
-         * Only override the physical print dimensions here.
-         * Text positions, alignment, font sizes, and artwork positioning
-         * come from id-printing.css, just like the on-screen preview.
-         */
-        const printOverrides = `
+        const printStyles = `
             <style>
-                /* MAIN PARTICIPANT NAME */
-                .id-main-name {
-                    left: 17% !important;
-                    top: 27% !important;
-                    width: 31.5% !important;
-                    height: 45% !important;
-
-                    font-family: Aptos, "Aptos Display", "Segoe UI", Arial, sans-serif !important;
-                    font-size: 35   px !important;
-                    font-weight: 700 !important;
-
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    text-align: center !important;
-                }
-
-                /* PSA ID */
-                .id-main-psa {
-                    left: 1.7% !important;
-                    top: 66.8% !important;
-                    width: 13.5% !important;
-
-                    font-family: Aptos, "Aptos Display", "Segoe UI", Arial, sans-serif !important;
-                    font-size: 17px !important;
-                    text-align: center !important;
-                }
-
-                .id-main-psa strong {
-                    font-size: 17px !important;
-                    font-weight: 700 !important;
-                }
-
-                /* RAFFLE STUB NAME */
-                .id-raffle-name {
-                    left: 52% !important;
-                    top: 69% !important;
-                    width: 21.5% !important;
-                    height: 12% !important;
-
-                    font-family: Aptos, "Aptos Display", "Segoe UI", Arial, sans-serif !important;
-                    font-size: 14px !important;
-                    font-weight: 700 !important;
-
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    text-align: center !important;
-                }
-
-                /* RAFFLE REFERENCE NUMBER */
-                .id-raffle-reference {
-                    left: 52% !important;
-                    top: 79.5% !important;
-                    width: 21.5% !important;
-
-                    font-family: Aptos, "Aptos Display", "Segoe UI", Arial, sans-serif !important;
-                    font-size: 12px !important;
-                    font-weight: 600 !important;
-                    text-align: center !important;
-                }
-                    
                 @page {
-                    size: 267mm 100mm;
+                    size: 14in 8.5in;
                     margin: 0;
+                }
+
+                * {
+                    box-sizing: border-box;
                 }
 
                 html,
                 body {
+                    width: 14in !important;
+                    height: 8.5in !important;
                     margin: 0 !important;
                     padding: 0 !important;
-                    width: 267mm !important;
-                    height: 100mm !important;
                     overflow: hidden !important;
-                    background: #fff;
+                    background: #fff !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
                 }
@@ -387,111 +249,208 @@
                 }
 
                 #printable-id {
-                    width: 267mm !important;
-                    height: 100mm !important;
-                    max-width: none !important;
-                    aspect-ratio: auto !important;
+                    position: relative !important;
+                    display: block !important;
+                    width: 14in !important;
+                    min-width: 14in !important;
+                    max-width: 14in !important;
+                    height: 8.5in !important;
+                    min-height: 8.5in !important;
+                    max-height: 8.5in !important;
                     margin: 0 !important;
                     padding: 0 !important;
                     overflow: hidden !important;
-                    position: relative !important;
-                    background: #fff;
-                    font-family: Aptos, "Aptos Display", "Segoe UI", Arial, sans-serif;
+                    aspect-ratio: auto !important;
+                    background: #fff !important;
+                    font-family: Arial, Helvetica, sans-serif !important;
                 }
 
-                #printable-id > .id-card-background {
+                /* QR code: position measured from the supplied 14 x 8.5 in PDF. */
+                #printable-id .id-qr {
                     position: absolute !important;
-                    inset: 0 !important;
+                    left: 6.24in !important;
+                    top: 3.65in !important;
+                    width: 0.94in !important;
+                    height: 0.94in !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    background: transparent !important;
+                    z-index: 2 !important;
+                }
+
+                #printable-id .id-qr img {
+                    display: block !important;
                     width: 100% !important;
                     height: 100% !important;
-                    object-fit: fill !important;
+                    object-fit: contain !important;
                 }
 
-                /*
-                 * Use physical print dimensions without changing
-                 * the CSS percentage-based text alignment.
-                 */
-                #printable-id .id-qr,
-                #printable-id .id-main-name,
-                #printable-id .id-main-psa,
-                #printable-id .id-raffle-name,
+                 /* PSA member number directly below the QR code. */
+                #printable-id .id-main-psa {
+                    position: absolute !important;
+                    left: 6.24in !important;
+                    top: 4.65in !important;
+                    width: 0.94in !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    color: #000 !important;
+                    font-family: Arial, Helvetica, sans-serif !important;
+                    font-size: 11pt !important;
+                    font-weight: 400 !important;
+                    line-height: 1.1 !important;
+                    text-align: center !important;
+                    white-space: nowrap !important;
+                    z-index: 2 !important;
+                }
+
+                #printable-id .id-main-psa strong {
+                    margin-left: 2px !important;
+                    font-size: inherit !important;
+                    font-weight: 700 !important;
+                }
+
+                /* Main participant name, to the right of the QR code. */
+                #printable-id .id-main-name {
+                    position: absolute !important;
+                    left: 7.25in !important;
+                    top: 3.78in !important;
+                    width: 2.62in !important;
+                    height: 1.00in !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    overflow: hidden !important;
+                    color: #000 !important;
+                    font-family: Arial, Helvetica, sans-serif !important;
+                    font-size: 22pt !important;
+                    font-weight: 700 !important;
+                    line-height: 1.08 !important;
+                    letter-spacing: 0 !important;
+                    text-align: center !important;
+                    text-transform: uppercase !important;
+                    overflow-wrap: normal !important;
+                    z-index: 2 !important;
+                }
+
+                #printable-id .id-main-name span {
+                    display: block !important;
+                    max-width: 100% !important;
+                }
+
+               
+                /* Vertical raffle name at the far right of the printed group. */
+                #printable-id .id-raffle-name {
+                    position: absolute !important;
+                    left: 10.30in !important;
+                    top: 4.55in !important;
+                    width: 1.40in !important;
+                    height: 0.25in !important;
+
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+
+                    margin: 0 !important;
+                    padding: 0 !important;
+
+                    transform: none !important;
+
+                    color: #000 !important;
+                    font-family: Arial, Helvetica, sans-serif !important;
+                    font-size: 9pt !important;
+                    font-weight: 700 !important;
+                    line-height: 1 !important;
+                    text-align: center !important;
+                    text-transform: uppercase !important;
+                    white-space: nowrap !important;
+                }
+
+                #printable-id .id-raffle-name span {
+                    display: inline !important;
+                }
+
+                /* Vertical reference number */
                 #printable-id .id-raffle-reference {
-                    box-sizing: border-box;
+                    position: absolute !important;
+                    left: 10.30in !important;
+                    top: 4.75in !important;
+                    width: 1.50in !important;
+                    height: 0.20in !important;
+
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+
+                    margin: 0 !important;
+                    padding: 0 !important;
+
+                    transform: none !important;
+
+                    color: #000 !important;
+                    font-family: Arial, Helvetica, sans-serif !important;
+                    font-size: 7pt !important;
+                    font-weight: 400 !important;
+                    line-height: 1 !important;
+                    text-align: center !important;
+                    white-space: nowrap !important;
                 }
             </style>
         `;
 
         printWindow.document.open();
-
         printWindow.document.write(`
             <!DOCTYPE html>
-            <html>
+            <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1">
-                <title>PSA Annual Convention 2026 ID</title>
+                <title>PSA CME Participant ID</title>
                 <link rel="stylesheet" href="${cssUrl}">
-                ${printOverrides}
+                ${printStyles}
             </head>
             <body>
-                ${idCard.outerHTML}
+                ${printable.outerHTML}
             </body>
             </html>
         `);
-
         printWindow.document.close();
 
-        /*
-         * Wait for the external stylesheet and images before printing.
-         */
-        const waitForStylesheet = Array.from(
-            printWindow.document.styleSheets
-        ).length;
-
-        const images = Array.from(printWindow.document.images);
-
         const waitForImages = Promise.all(
-            images.map(image => {
-                if (image.complete) {
+            Array.from(printWindow.document.images).map((img) => {
+                if (img.complete) {
                     return Promise.resolve();
                 }
 
-                return new Promise(resolve => {
-                    image.onload = resolve;
-                    image.onerror = resolve;
+                return new Promise((resolve) => {
+                    img.addEventListener('load', resolve, { once: true });
+                    img.addEventListener('error', resolve, { once: true });
                 });
             })
         );
 
-        const waitForCss = new Promise(resolve => {
-            const link = printWindow.document.querySelector(
-                'link[rel="stylesheet"]'
-            );
+        const stylesheet = printWindow.document.querySelector('link[rel="stylesheet"]');
+        const waitForStylesheet = stylesheet
+            ? new Promise((resolve) => {
+                if (stylesheet.sheet) {
+                    resolve();
+                    return;
+                }
 
-            if (!link) {
-                resolve();
-                return;
-            }
+                stylesheet.addEventListener('load', resolve, { once: true });
+                stylesheet.addEventListener('error', resolve, { once: true });
+            })
+            : Promise.resolve();
 
-            link.onload = resolve;
-            link.onerror = resolve;
-
-            if (waitForStylesheet > 0 && link.sheet) {
-                resolve();
-            }
-        });
-
-        Promise.all([waitForImages, waitForCss]).then(() => {
+        Promise.all([waitForImages, waitForStylesheet]).then(() => {
             printWindow.focus();
-
-            setTimeout(() => {
-                printWindow.print();
-            }, 400);
+            printWindow.requestAnimationFrame(() => {
+                printWindow.requestAnimationFrame(() => printWindow.print());
+            });
         });
 
-        printWindow.onafterprint = () => {
-            printWindow.close();
-        };
+        printWindow.onafterprint = () => printWindow.close();
     };
 </script>
 @endscript
