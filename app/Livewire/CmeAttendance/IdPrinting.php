@@ -16,15 +16,15 @@ class IdPrinting extends Component
 
     public string $memberId = '';
 
+    public string $manualName = '';
+
+    public bool $isManualEntry = false;
+
+    public array $searchResults = [];
+
     public ?string $message = null;
 
     public ?string $messageType = null;
-
-    /*
-    |--------------------------------------------------------------------------
-    | Displayed Participant Information
-    |--------------------------------------------------------------------------
-    */
 
     public ?string $displayMemberId = null;
 
@@ -36,20 +36,15 @@ class IdPrinting extends Component
 
     public ?string $displayMemberType = null;
 
-    public ?string $referenceNumber = null;
+    public ?string $displayChapter = null;
 
-    /*
-    |--------------------------------------------------------------------------
-    | QR Code
-    |--------------------------------------------------------------------------
-    */
+    public ?string $referenceNumber = null;
 
     public ?string $qrCode = null;
 
-
     /*
     |--------------------------------------------------------------------------
-    | Search / Check Registration
+    | SEARCH PARTICIPANTS
     |--------------------------------------------------------------------------
     */
 
@@ -57,278 +52,396 @@ class IdPrinting extends Component
     {
         $this->resetDisplay();
 
-        $this->message = null;
+        $this->isManualEntry = false;
+        $this->manualName = '';
+        $this->searchResults = [];
+        $this->resetMessage();
 
-        $this->messageType = null;
+        $search = trim($this->memberId);
 
-        $memberId = trim($this->memberId);
-
-        if ($memberId === '') {
-
+        if ($search === '') {
             $this->showMessage(
-                'Please scan or enter a participant ID.',
+                'Enter a PSA ID or participant name to search.',
                 'error'
             );
 
             return;
         }
 
-
         /*
         |--------------------------------------------------------------------------
-        | 1. CHECK NON-MEMBER REGISTRATION
+        | SEARCH REGISTERED MEMBERS
         |--------------------------------------------------------------------------
         */
 
-        $nonMember = CmeProgramRegistrationNM::query()
+        $membersQuery = Member::query()
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('cme_program_registration as cpr')
+                    ->whereColumn(
+                        'cpr.member_id_no',
+                        'member.member_id_no'
+                    )
+                    ->where('cpr.cme_year', $this->cmeYear)
+                    ->where('cpr.cme_program_code', $this->cmeProgramCode);
+            });
+
+        /*
+         * Search by exact PSA ID first, or by first / middle / last name.
+         */
+        $membersQuery->where(function ($query) use ($search) {
+            $query->where('member.member_id_no', $search)
+                ->orWhere('member.mem_first_name', 'like', "%{$search}%")
+                ->orWhere('member.mem_last_name', 'like', "%{$search}%")
+                ->orWhere('member.mem_middle_name', 'like', "%{$search}%");
+        });
+
+        $members = $membersQuery
+            ->limit(30)
+            ->get();
+
+        foreach ($members as $member) {
+            $fullName = trim(implode(' ', array_filter([
+                $member->mem_first_name,
+                $member->mem_middle_name,
+                $member->mem_last_name,
+            ])));
+
+            $this->searchResults[] = [
+                'type' => 'member',
+                'id' => (string) $member->member_id_no,
+                'name' => $fullName,
+                'member_type' => $member->psa_mem_type ?? 'N/A',
+                'chapter' => $member->psa_chapter_code ?? 'N/A',
+            ];
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | SEARCH REGISTERED NON-MEMBERS
+        |--------------------------------------------------------------------------
+        */
+
+        $nonMembersQuery = CmeProgramRegistrationNM::query()
             ->where('cme_year', $this->cmeYear)
             ->where('cme_program_code', $this->cmeProgramCode)
-            ->where('nm_id_no', $memberId)
-            ->first();
+            ->where(function ($query) use ($search) {
+                $query->where('nm_id_no', $search)
+                    ->orWhere('nm_first_name', 'like', "%{$search}%")
+                    ->orWhere('nm_last_name', 'like', "%{$search}%")
+                    ->orWhere('nm_middle_name', 'like', "%{$search}%");
+            });
 
-        if ($nonMember) {
+        $nonMembers = $nonMembersQuery
+            ->limit(30)
+            ->get();
 
-            $this->displayMemberId = $nonMember->nm_id_no;
+        foreach ($nonMembers as $nonMember) {
+            $fullName = trim(implode(' ', array_filter([
+                $nonMember->nm_first_name,
+                $nonMember->nm_middle_name,
+                $nonMember->nm_last_name,
+            ])));
 
-            $this->displayFirstName = $nonMember->nm_first_name;
+            $this->searchResults[] = [
+                'type' => 'non-member',
+                'id' => (string) $nonMember->nm_id_no,
+                'name' => $fullName,
+                'member_type' => 'NON-MEMBER',
+                'chapter' => 'N/A',
+            ];
+        }
 
-            $this->displayLastName = $nonMember->nm_last_name;
+        /*
+        |--------------------------------------------------------------------------
+        | SORT RESULTS
+        |--------------------------------------------------------------------------
+        */
 
-            $this->displayMiddleName = $nonMember->nm_middle_name;
+        usort($this->searchResults, function ($a, $b) use ($search) {
+            $aExact = strcasecmp($a['id'], $search) === 0;
+            $bExact = strcasecmp($b['id'], $search) === 0;
 
-            $this->displayMemberType = 'NM';
+            return $bExact <=> $aExact;
+        });
+
+        if (empty($this->searchResults)) {
+            $this->showMessage(
+                'No registered participant matched your search.',
+                'error'
+            );
+
+            return;
+        }
+
+        $this->showMessage(
+            count($this->searchResults) . ' matching participant(s) found. Select a participant to continue.',
+            'success'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SELECT PARTICIPANT FROM SEARCH RESULTS
+    |--------------------------------------------------------------------------
+    */
+
+    public function selectParticipant(string $type, string $id): void
+    {
+        $this->resetDisplay();
+
+        $this->isManualEntry = false;
+        $this->manualName = '';
+        $this->memberId = $id;
+        $this->resetMessage();
+
+        /*
+        |--------------------------------------------------------------------------
+        | REGULAR MEMBER
+        |--------------------------------------------------------------------------
+        */
+
+        if ($type === 'member') {
+            $registered = CmeProgramRegistration::query()
+                ->where('cme_year', $this->cmeYear)
+                ->where('cme_program_code', $this->cmeProgramCode)
+                ->where('member_id_no', $id)
+                ->first();
+
+            if (!$registered) {
+                $this->showMessage(
+                    'This member is not registered for the selected CME program.',
+                    'error'
+                );
+
+                return;
+            }
+
+            $member = Member::query()
+                ->where('member_id_no', $id)
+                ->first();
+
+            if (!$member) {
+                $this->showMessage(
+                    'Member information could not be found.',
+                    'error'
+                );
+
+                return;
+            }
+
+            $this->displayMemberId = (string) $member->member_id_no;
+            $this->displayFirstName = $member->mem_first_name;
+            $this->displayMiddleName = $member->mem_middle_name;
+            $this->displayLastName = $member->mem_last_name;
+            $this->displayMemberType = $member->psa_mem_type ?? 'N/A';
+            $this->displayChapter = $member->psa_chapter_code ?? 'N/A';
 
             /*
-            |--------------------------------------------------------------------------
-            | Reference Number
-            |--------------------------------------------------------------------------
-            |
-            | Use this only if cme_program_registrationNM has
-            | a reference_number column.
-            |
-            */
-
-            $this->referenceNumber = $nonMember->reference_number ?? null;
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Generate QR Code
-            |--------------------------------------------------------------------------
-            */
+             * Adjust this field if your registration table uses
+             * a different reference-number column.
+             */
+            $this->referenceNumber = $registered->payment_ref_no;
 
             $this->generateQrCode($this->displayMemberId);
 
+            $this->searchResults = [];
 
             $this->showMessage(
-                'Participant is registered for this CME program.',
+                'Participant is registered. ID is ready for printing.',
                 'success'
             );
 
             return;
         }
 
-
         /*
         |--------------------------------------------------------------------------
-        | 2. CHECK REGULAR MEMBER REGISTRATION
+        | NON-MEMBER
         |--------------------------------------------------------------------------
         */
 
-        $registration = CmeProgramRegistration::query()
-            ->where('cme_year', $this->cmeYear)
-            ->where('cme_program_code', $this->cmeProgramCode)
-            ->where('member_id_no', $memberId)
-            ->first();
+        if ($type === 'non-member') {
+            $registered = CmeProgramRegistrationNM::query()
+                ->where('cme_year', $this->cmeYear)
+                ->where('cme_program_code', $this->cmeProgramCode)
+                ->where('nm_id_no', $id)
+                ->first();
 
-        if (!$registration) {
+            if (!$registered) {
+                $this->showMessage(
+                    'This non-member is not registered for the selected CME program.',
+                    'error'
+                );
+
+                return;
+            }
+
+            $this->displayMemberId = (string) $registered->nm_id_no;
+            $this->displayFirstName = $registered->nm_first_name;
+            $this->displayMiddleName = $registered->nm_middle_name;
+            $this->displayLastName = $registered->nm_last_name;
+            $this->displayMemberType = 'NON-MEMBER';
+            $this->displayChapter = 'N/A';
+
+            $this->referenceNumber = $registered->payment_ref_no;
+
+            $this->generateQrCode($this->displayMemberId);
+
+            $this->searchResults = [];
 
             $this->showMessage(
-                'This participant is not registered for this CME program.',
-                'error'
+                'Non-member is registered. ID is ready for printing.',
+                'success'
             );
 
             return;
         }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | 3. GET REFERENCE NUMBER
-        |--------------------------------------------------------------------------
-        */
-
-        $this->referenceNumber = $registration->payment_ref_no ?? null;
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | 4. LOAD MEMBER
-        |--------------------------------------------------------------------------
-        */
-
-        $member = Member::query()
-            ->where('member_id_no', $memberId)
-            ->first();
-
-        if (!$member) {
-
-            $this->showMessage(
-                'The CME registration was found, but the member record could not be found.',
-                'error'
-            );
-
-            return;
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | 5. DISPLAY MEMBER
-        |--------------------------------------------------------------------------
-        */
-
-        $this->displayMemberId = $member->member_id_no;
-
-        $this->displayFirstName = $member->mem_first_name;
-
-        $this->displayLastName = $member->mem_last_name;
-
-        $this->displayMiddleName = $member->mem_middle_name;
-
-        $this->displayMemberType = $member->psa_mem_type;
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | 6. GENERATE QR CODE
-        |--------------------------------------------------------------------------
-        */
-
-        $this->generateQrCode($this->displayMemberId);
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | SUCCESS
-        |--------------------------------------------------------------------------
-        */
 
         $this->showMessage(
-            'Member is registered for this CME program.',
+            'Invalid participant type.',
+            'error'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | MANUAL NAME-ONLY ENTRY
+    |--------------------------------------------------------------------------
+    */
+
+    public function printManualEntry(): void
+    {
+        $this->resetMessage();
+
+        $this->resetDisplay();
+
+        $this->searchResults = [];
+        $this->memberId = '';
+
+        $name = trim(preg_replace('/\s+/', ' ', $this->manualName));
+
+        if ($name === '') {
+            $this->showMessage(
+                'Please enter the participant name.',
+                'error'
+            );
+
+            return;
+        }
+
+        if (mb_strlen($name) > 255) {
+            $this->showMessage(
+                'The participant name must not exceed 255 characters.',
+                'error'
+            );
+
+            return;
+        }
+
+        $this->manualName = $name;
+        $this->isManualEntry = true;
+
+        /*
+         * Store the entire name in the first-name display property.
+         * This allows the existing print layout to display it
+         * without requiring PSA ID or other participant details.
+         */
+        $this->displayFirstName = $name;
+        $this->displayLastName = '';
+        $this->displayMiddleName = '';
+
+        $this->displayMemberId = null;
+        $this->displayMemberType = 'MANUAL';
+        $this->displayChapter = null;
+        $this->referenceNumber = null;
+        $this->qrCode = null;
+
+        $this->showMessage(
+            'Manual name entry is ready for printing.',
             'success'
         );
     }
 
-
     /*
     |--------------------------------------------------------------------------
-    | Generate QR Code
+    | GENERATE QR CODE
     |--------------------------------------------------------------------------
-    |
-    | The QR code contains only the participant/member ID.
-    |
     */
 
     private function generateQrCode(?string $memberId): void
     {
         if (!$memberId) {
-
             $this->qrCode = null;
 
             return;
         }
 
-
-        $svg = QrCode::format('svg')
-            ->size(500)
+        $qr = QrCode::format('svg')
+            ->size(300)
             ->margin(0)
-            ->errorCorrection('H')
             ->generate($memberId);
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Remove SVG Background
-        |--------------------------------------------------------------------------
-        |
-        | This removes the white <rect> generated by the QR library
-        | so the convention artwork remains visible behind the QR code.
-        |
-        */
-
-        $svg = preg_replace(
-            '/<rect[^>]*fill=["\']#?ffffff["\'][^>]*\/?>/i',
-            '',
-            $svg
-        );
-
-
-        $this->qrCode = base64_encode($svg);
+        $this->qrCode = base64_encode($qr);
     }
-
 
     /*
     |--------------------------------------------------------------------------
-    | Clear
+    | CLEAR
     |--------------------------------------------------------------------------
     */
 
     public function clear(): void
     {
         $this->memberId = '';
+        $this->manualName = '';
+
+        $this->isManualEntry = false;
+        $this->searchResults = [];
 
         $this->resetDisplay();
-
-        $this->message = null;
-
-        $this->messageType = null;
+        $this->resetMessage();
     }
-
 
     /*
     |--------------------------------------------------------------------------
-    | Reset Display
+    | RESET DISPLAY
     |--------------------------------------------------------------------------
     */
 
     private function resetDisplay(): void
     {
         $this->displayMemberId = null;
-
         $this->displayFirstName = null;
-
-        $this->displayLastName = null;
-
         $this->displayMiddleName = null;
-
+        $this->displayLastName = null;
         $this->displayMemberType = null;
-
+        $this->displayChapter = null;
         $this->referenceNumber = null;
-
         $this->qrCode = null;
     }
 
-
     /*
     |--------------------------------------------------------------------------
-    | Message
+    | MESSAGES
     |--------------------------------------------------------------------------
     */
 
-    private function showMessage(
-        string $message,
-        string $type
-    ): void {
+    private function showMessage(string $message, string $type): void
+    {
         $this->message = $message;
-
         $this->messageType = $type;
     }
 
+    private function resetMessage(): void
+    {
+        $this->message = null;
+        $this->messageType = null;
+    }
 
     /*
     |--------------------------------------------------------------------------
-    | Render
+    | RENDER
     |--------------------------------------------------------------------------
     */
 
