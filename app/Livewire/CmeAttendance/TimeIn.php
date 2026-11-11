@@ -22,7 +22,6 @@ class TimeIn extends Component
 
     public string $recentSearch = '';
 
-
     /*
     |--------------------------------------------------------------------------
     | LAST TIMED-IN PARTICIPANT
@@ -52,18 +51,11 @@ class TimeIn extends Component
 
     public function timeIn(): void
     {
-        /*
-        |--------------------------------------------------------------------------
-        | RESET PREVIOUS MESSAGE / SUMMARY
-        |--------------------------------------------------------------------------
-        */
-
         $this->resetMessage();
 
         $memberId = trim($this->memberId);
 
         if ($memberId === '') {
-
             $this->showMessage(
                 'Please enter your Member ID.',
                 'error'
@@ -72,10 +64,9 @@ class TimeIn extends Component
             return;
         }
 
-
         /*
         |--------------------------------------------------------------------------
-        | 1. CHECK NON-MEMBER
+        | 1. CHECK NON-MEMBER REGISTRATION
         |--------------------------------------------------------------------------
         */
 
@@ -83,34 +74,45 @@ class TimeIn extends Component
             ->where('cme_year', $this->cmeYear)
             ->where('cme_program_code', $this->cmeProgramCode)
             ->where('nm_id_no', $memberId)
-            ->first();
-
+            ->first([
+                'nm_id_no',
+                'nm_first_name',
+                'nm_middle_name',
+                'nm_last_name',
+            ]);
 
         /*
         |--------------------------------------------------------------------------
-        | 2. NON-MEMBER TIME IN
+        | 2. RESOLVE PARTICIPANT INFORMATION
         |--------------------------------------------------------------------------
         */
 
         if ($nonMember) {
+            $participant = [
+                'id' => $nonMember->nm_id_no,
+                'first_name' => $nonMember->nm_first_name,
+                'middle_name' => $nonMember->nm_middle_name,
+                'last_name' => $nonMember->nm_last_name,
+                'type' => 'NM',
+            ];
 
+            $member = null;
+        } else {
             /*
             |--------------------------------------------------------------------------
-            | CHECK DUPLICATE
+            | CHECK REGULAR MEMBER REGISTRATION
             |--------------------------------------------------------------------------
             */
 
-            $alreadyTimedIn = CmeAttendance::query()
+            $registered = CmeProgramRegistration::query()
                 ->where('cme_year', $this->cmeYear)
                 ->where('cme_program_code', $this->cmeProgramCode)
                 ->where('member_id_no', $memberId)
-                ->whereDate('date', today())
                 ->exists();
 
-            if ($alreadyTimedIn) {
-
+            if (! $registered) {
                 $this->showMessage(
-                    'You have already timed in today.',
+                    'You are not registered for this CME program.',
                     'error'
                 );
 
@@ -119,154 +121,66 @@ class TimeIn extends Component
                 return;
             }
 
-
             /*
             |--------------------------------------------------------------------------
-            | CURRENT TIME
+            | LOAD ONLY REQUIRED MEMBER COLUMNS
             |--------------------------------------------------------------------------
             */
 
-            $timeIn = now();
+            $member = Member::query()
+                ->select([
+                    'member_id_no',
+                    'mem_first_name',
+                    'mem_middle_name',
+                    'mem_last_name',
+                    'psa_mem_type',
+                    'mem_pic',
+                ])
+                ->where('member_id_no', $memberId)
+                ->first();
 
+            if (! $member) {
+                $this->showMessage(
+                    'Member information not found.',
+                    'error'
+                );
 
-            /*
-            |--------------------------------------------------------------------------
-            | SAVE NM ATTENDANCE
-            |--------------------------------------------------------------------------
-            */
+                $this->memberId = '';
 
-            CmeAttendance::create([
-                'cme_year' => $this->cmeYear,
+                return;
+            }
 
-                'cme_program_code' => $this->cmeProgramCode,
-
-                'member_id_no' => $nonMember->nm_id_no,
-
-                'first_name' => $nonMember->nm_first_name,
-
-                'last_name' => $nonMember->nm_last_name,
-
-                'middle_name' => $nonMember->nm_middle_name,
-
-                'mem_type' => 'NM',
-
-                'time_in' => $timeIn->format('H:i:s'),
-
-                'time_out' => null,
-
-                'date' => today(),
-
-                'remarks' => null,
-            ]);
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | HEADER SUMMARY
-            |--------------------------------------------------------------------------
-            */
-
-            $this->displayFirstName =
-                $nonMember->nm_first_name;
-
-            $this->displayLastName =
-                $nonMember->nm_last_name;
-
-            $this->displayMiddleName =
-                $nonMember->nm_middle_name;
-
-            $this->displayMemberId =
-                $nonMember->nm_id_no;
-
-            $this->displayMemberType =
-                'NM';
-
-            $this->displayTimeIn =
-                $timeIn->format('h:i:s A');
-
-            $this->memberPhoto = null;
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | SUCCESS
-            |--------------------------------------------------------------------------
-            */
-
-            $this->showMessage(
-                'Time In recorded successfully.',
-                'success'
-            );
-
-            $this->memberId = '';
-
-            return;
+            $participant = [
+                'id' => $member->member_id_no,
+                'first_name' => $member->mem_first_name,
+                'middle_name' => $member->mem_middle_name,
+                'last_name' => $member->mem_last_name,
+                'type' => $member->psa_mem_type,
+            ];
         }
-
 
         /*
         |--------------------------------------------------------------------------
-        | 3. CHECK REGULAR CME REGISTRATION
+        | 3. CHECK DUPLICATE TIME IN
         |--------------------------------------------------------------------------
+        |
+        | Use a date range instead of whereDate().
+        | This avoids applying a SQL function to the date column.
+        |
         */
 
-        $registeredMember = CmeProgramRegistration::query()
-            ->where('cme_year', $this->cmeYear)
-            ->where('cme_program_code', $this->cmeProgramCode)
-            ->where('member_id_no', $memberId)
-            ->exists();
-
-        if (!$registeredMember) {
-
-            $this->showMessage(
-                'You are not registered for this CME program.',
-                'error'
-            );
-
-            $this->memberId = '';
-
-            return;
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | 4. GET MEMBER
-        |--------------------------------------------------------------------------
-        */
-
-        $member = Member::query()
-            ->where('member_id_no', $memberId)
-            ->first();
-
-        if (!$member) {
-
-            $this->showMessage(
-                'Member information not found.',
-                'error'
-            );
-
-            $this->memberId = '';
-
-            return;
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | 5. CHECK DUPLICATE TIME IN
-        |--------------------------------------------------------------------------
-        */
+        $startOfDay = now()->startOfDay();
+        $startOfTomorrow = $startOfDay->copy()->addDay();
 
         $alreadyTimedIn = CmeAttendance::query()
             ->where('cme_year', $this->cmeYear)
             ->where('cme_program_code', $this->cmeProgramCode)
-            ->where('member_id_no', $memberId)
-            ->whereDate('date', today())
+            ->where('member_id_no', $participant['id'])
+            ->where('date', '>=', $startOfDay)
+            ->where('date', '<', $startOfTomorrow)
             ->exists();
 
         if ($alreadyTimedIn) {
-
             $this->showMessage(
                 'You have already timed in today.',
                 'error'
@@ -277,86 +191,59 @@ class TimeIn extends Component
             return;
         }
 
-
         /*
         |--------------------------------------------------------------------------
-        | 6. CURRENT TIME
+        | 4. SAVE ATTENDANCE
         |--------------------------------------------------------------------------
         */
 
         $timeIn = now();
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | 7. GET PHOTO
-        |--------------------------------------------------------------------------
-        */
-
-        $photo = $this->getMemberPhoto($member);
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | 8. SAVE ATTENDANCE
-        |--------------------------------------------------------------------------
-        */
-
         CmeAttendance::create([
             'cme_year' => $this->cmeYear,
-
             'cme_program_code' => $this->cmeProgramCode,
 
-            'member_id_no' => $member->member_id_no,
+            'member_id_no' => $participant['id'],
 
-            'first_name' => $member->mem_first_name,
+            'first_name' => $participant['first_name'],
+            'middle_name' => $participant['middle_name'],
+            'last_name' => $participant['last_name'],
 
-            'last_name' => $member->mem_last_name,
-
-            'middle_name' => $member->mem_middle_name,
-
-            'mem_type' => $member->psa_mem_type,
+            'mem_type' => $participant['type'],
 
             'time_in' => $timeIn->format('H:i:s'),
-
             'time_out' => null,
-
-            'date' => today(),
-
+            'date' => $timeIn->toDateString(),
             'remarks' => null,
         ]);
 
-
         /*
         |--------------------------------------------------------------------------
-        | 9. SET HEADER SUMMARY
+        | 5. SET SUCCESS SUMMARY
         |--------------------------------------------------------------------------
         */
 
-        $this->displayFirstName =
-            $member->mem_first_name;
+        $this->displayFirstName = $participant['first_name'];
+        $this->displayLastName = $participant['last_name'];
+        $this->displayMiddleName = $participant['middle_name'];
+        $this->displayMemberId = $participant['id'];
+        $this->displayMemberType = $participant['type'];
 
-        $this->displayLastName =
-            $member->mem_last_name;
-
-        $this->displayMiddleName =
-            $member->mem_middle_name;
-
-        $this->displayMemberId =
-            $member->member_id_no;
-
-        $this->displayMemberType =
-            $member->psa_mem_type;
-
-        $this->displayTimeIn =
-            $timeIn->format('h:i:s A');
-
-        $this->memberPhoto = $photo;
-
+        $this->displayTimeIn = $timeIn->format('h:i:s A');
 
         /*
         |--------------------------------------------------------------------------
-        | 10. SUCCESS
+        | 6. MEMBER PHOTO
+        |--------------------------------------------------------------------------
+        */
+
+        $this->memberPhoto = $member
+            ? $this->getMemberPhoto($member)
+            : null;
+
+        /*
+        |--------------------------------------------------------------------------
+        | 7. SUCCESS MESSAGE
         |--------------------------------------------------------------------------
         */
 
@@ -364,13 +251,6 @@ class TimeIn extends Component
             'Time In recorded successfully.',
             'success'
         );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | 11. CLEAR INPUT
-        |--------------------------------------------------------------------------
-        */
 
         $this->memberId = '';
     }
@@ -384,12 +264,11 @@ class TimeIn extends Component
 
     private function getMemberPhoto(?Member $member): ?string
     {
-        if (!$member || empty($member->mem_pic)) {
+        if (! $member || empty($member->mem_pic)) {
             return null;
         }
 
         $photo = $member->mem_pic;
-
 
         /*
         |--------------------------------------------------------------------------
@@ -398,15 +277,12 @@ class TimeIn extends Component
         */
 
         if (is_resource($photo)) {
-
             $photo = stream_get_contents($photo);
         }
 
-
-        if (!is_string($photo) || $photo === '') {
+        if (! is_string($photo) || $photo === '') {
             return null;
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -415,27 +291,18 @@ class TimeIn extends Component
         */
 
         if (substr($photo, 0, 2) === "\xFF\xD8") {
-
-            return 'data:image/jpeg;base64,' .
-                base64_encode($photo);
+            return 'data:image/jpeg;base64,' . base64_encode($photo);
         }
-
 
         /*
         |--------------------------------------------------------------------------
         | HEX DATA
         |--------------------------------------------------------------------------
-        |
-        | Some SQL Server configurations may return binary data
-        | as hexadecimal text beginning with 0x.
-        |
         */
 
         if (str_starts_with($photo, '0x')) {
-
             $photo = substr($photo, 2);
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -447,25 +314,15 @@ class TimeIn extends Component
             ctype_xdigit($photo) &&
             strlen($photo) % 2 === 0
         ) {
-
             $binary = hex2bin($photo);
 
             if (
                 $binary !== false &&
                 substr($binary, 0, 2) === "\xFF\xD8"
             ) {
-
-                return 'data:image/jpeg;base64,' .
-                    base64_encode($binary);
+                return 'data:image/jpeg;base64,' . base64_encode($binary);
             }
         }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | FALLBACK
-        |--------------------------------------------------------------------------
-        */
 
         return null;
     }
@@ -480,33 +337,66 @@ class TimeIn extends Component
     public function clearSummary(): void
     {
         $this->displayFirstName = null;
-
         $this->displayLastName = null;
-
         $this->displayMiddleName = null;
-
         $this->displayMemberId = null;
-
         $this->displayMemberType = null;
-
         $this->displayTimeIn = null;
-
         $this->memberPhoto = null;
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | TOTAL ATTENDANCE
+    | TODAY'S ATTENDANCE STATISTICS
     |--------------------------------------------------------------------------
+    |
+    | One aggregate query supplies all five dashboard figures.
+    |
     */
 
-    public function getTotalAttendanceProperty()
+    public function getTodayStatsProperty(): array
     {
-        return CmeAttendance::query()
+        $startOfDay = now()->startOfDay();
+        $startOfTomorrow = $startOfDay->copy()->addDay();
+
+        $stats = CmeAttendance::query()
             ->where('cme_year', $this->cmeYear)
             ->where('cme_program_code', $this->cmeProgramCode)
-            ->count();
+            ->where('date', '>=', $startOfDay)
+            ->where('date', '<', $startOfTomorrow)
+            ->selectRaw("
+                COUNT(*) AS total,
+
+                SUM(CASE
+                    WHEN mem_type = 'RM' THEN 1
+                    ELSE 0
+                END) AS rm,
+
+                SUM(CASE
+                    WHEN mem_type = 'LM' THEN 1
+                    ELSE 0
+                END) AS lm,
+
+                SUM(CASE
+                    WHEN mem_type = 'TM' THEN 1
+                    ELSE 0
+                END) AS tm,
+
+                SUM(CASE
+                    WHEN mem_type = 'NM' THEN 1
+                    ELSE 0
+                END) AS nm
+            ")
+            ->first();
+
+        return [
+            'total' => (int) ($stats->total ?? 0),
+            'rm' => (int) ($stats->rm ?? 0),
+            'lm' => (int) ($stats->lm ?? 0),
+            'tm' => (int) ($stats->tm ?? 0),
+            'nm' => (int) ($stats->nm ?? 0),
+        ];
     }
 
 
@@ -516,117 +406,72 @@ class TimeIn extends Component
     |--------------------------------------------------------------------------
     */
 
-    public function getTodayAttendanceProperty()
+    public function getTodayAttendanceProperty(): int
     {
-        return CmeAttendance::query()
-            ->where('cme_year', $this->cmeYear)
-            ->where('cme_program_code', $this->cmeProgramCode)
-            ->whereDate('date', today())
-            ->count();
+        return $this->todayStats['total'];
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | TODAY'S RM
+    | TODAY'S RM COUNT
     |--------------------------------------------------------------------------
     */
 
-    public function getTodayRmCountProperty()
+    public function getTodayRmCountProperty(): int
     {
-        return CmeAttendance::query()
-            ->where('cme_year', $this->cmeYear)
-            ->where('cme_program_code', $this->cmeProgramCode)
-            ->where('mem_type', 'RM')
-            ->whereDate('date', today())
-            ->count();
+        return $this->todayStats['rm'];
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | TODAY'S LM
+    | TODAY'S LM COUNT
     |--------------------------------------------------------------------------
     */
 
-    public function getTodayLmCountProperty()
+    public function getTodayLmCountProperty(): int
     {
-        return CmeAttendance::query()
-            ->where('cme_year', $this->cmeYear)
-            ->where('cme_program_code', $this->cmeProgramCode)
-            ->where('mem_type', 'LM')
-            ->whereDate('date', today())
-            ->count();
+        return $this->todayStats['lm'];
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | TODAY'S TM
+    | TODAY'S TM COUNT
     |--------------------------------------------------------------------------
     */
 
-    public function getTodayTmCountProperty()
+    public function getTodayTmCountProperty(): int
     {
-        return CmeAttendance::query()
-            ->where('cme_year', $this->cmeYear)
-            ->where('cme_program_code', $this->cmeProgramCode)
-            ->where('mem_type', 'TM')
-            ->whereDate('date', today())
-            ->count();
+        return $this->todayStats['tm'];
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | TODAY'S NM
+    | TODAY'S NM COUNT
     |--------------------------------------------------------------------------
     */
 
-    public function getTodayNmCountProperty()
+    public function getTodayNmCountProperty(): int
     {
-        return CmeAttendance::query()
-            ->where('cme_year', $this->cmeYear)
-            ->where('cme_program_code', $this->cmeProgramCode)
-            ->where('mem_type', 'NM')
-            ->whereDate('date', today())
-            ->count();
+        return $this->todayStats['nm'];
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | DAILY ATTENDANCE
+    | TOTAL ATTENDANCE
     |--------------------------------------------------------------------------
     */
-    public function getDailyAttendanceProperty()
+
+    public function getTotalAttendanceProperty(): int
     {
         return CmeAttendance::query()
             ->where('cme_year', $this->cmeYear)
             ->where('cme_program_code', $this->cmeProgramCode)
-            ->selectRaw("
-                CAST([date] AS DATE) AS [date],
-                COUNT(*) AS [total],
-                SUM(CASE
-                    WHEN UPPER(LTRIM(RTRIM(mem_type))) = 'RM'
-                    THEN 1 ELSE 0
-                END) AS [rm_count],
-                SUM(CASE
-                    WHEN UPPER(LTRIM(RTRIM(mem_type))) = 'LM'
-                    THEN 1 ELSE 0
-                END) AS [lm_count],
-                SUM(CASE
-                    WHEN UPPER(LTRIM(RTRIM(mem_type))) = 'TM'
-                    THEN 1 ELSE 0
-                END) AS [tm_count],
-                SUM(CASE
-                    WHEN UPPER(LTRIM(RTRIM(mem_type))) = 'NM'
-                    THEN 1 ELSE 0
-                END) AS [nm_count]
-            ")
-            ->groupByRaw('CAST([date] AS DATE)')
-            ->orderByRaw('CAST([date] AS DATE) DESC')
-            ->get();
+            ->count();
     }
 
 
@@ -644,15 +489,55 @@ class TimeIn extends Component
             ->distinct()
             ->count('member_id_no');
 
-
         $nonMembers = CmeProgramRegistrationNM::query()
             ->where('cme_year', $this->cmeYear)
             ->where('cme_program_code', $this->cmeProgramCode)
             ->distinct()
             ->count('nm_id_no');
 
-
         return $members + $nonMembers;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DAILY ATTENDANCE SUMMARY
+    |--------------------------------------------------------------------------
+    */
+
+    public function getDailyAttendanceProperty()
+    {
+        return CmeAttendance::query()
+            ->where('cme_year', $this->cmeYear)
+            ->where('cme_program_code', $this->cmeProgramCode)
+            ->selectRaw("
+                CAST([date] AS DATE) AS [date],
+
+                COUNT(*) AS [total],
+
+                SUM(CASE
+                    WHEN UPPER(LTRIM(RTRIM(mem_type))) = 'RM'
+                    THEN 1 ELSE 0
+                END) AS [rm_count],
+
+                SUM(CASE
+                    WHEN UPPER(LTRIM(RTRIM(mem_type))) = 'LM'
+                    THEN 1 ELSE 0
+                END) AS [lm_count],
+
+                SUM(CASE
+                    WHEN UPPER(LTRIM(RTRIM(mem_type))) = 'TM'
+                    THEN 1 ELSE 0
+                END) AS [tm_count],
+
+                SUM(CASE
+                    WHEN UPPER(LTRIM(RTRIM(mem_type))) = 'NM'
+                    THEN 1 ELSE 0
+                END) AS [nm_count]
+            ")
+            ->groupByRaw('CAST([date] AS DATE)')
+            ->orderByRaw('CAST([date] AS DATE) DESC')
+            ->get();
     }
 
 
@@ -664,19 +549,34 @@ class TimeIn extends Component
 
     public function getRecentCheckInsProperty()
     {
+        $startOfDay = now()->startOfDay();
+        $startOfTomorrow = $startOfDay->copy()->addDay();
+
+        $search = trim($this->recentSearch);
+
         return CmeAttendance::query()
+            ->select([
+                'member_id_no',
+                'first_name',
+                'middle_name',
+                'last_name',
+                'mem_type',
+                'time_in',
+                'date',
+            ])
             ->where('cme_year', $this->cmeYear)
             ->where('cme_program_code', $this->cmeProgramCode)
-            ->whereDate('date', today())
-            ->when(trim($this->recentSearch) !== '', function ($query) {
-                $search = '%' . trim($this->recentSearch) . '%';
+            ->where('date', '>=', $startOfDay)
+            ->where('date', '<', $startOfTomorrow)
+            ->when($search !== '', function ($query) use ($search) {
+                $term = '%' . $search . '%';
 
-                $query->where(function ($q) use ($search) {
-                    $q->where('member_id_no', 'LIKE', $search)
-                        ->orWhere('first_name', 'LIKE', $search)
-                        ->orWhere('last_name', 'LIKE', $search)
-                        ->orWhere('middle_name', 'LIKE', $search)
-                        ->orWhere('mem_type', 'LIKE', $search);
+                $query->where(function ($q) use ($term) {
+                    $q->where('member_id_no', 'LIKE', $term)
+                        ->orWhere('first_name', 'LIKE', $term)
+                        ->orWhere('last_name', 'LIKE', $term)
+                        ->orWhere('middle_name', 'LIKE', $term)
+                        ->orWhere('mem_type', 'LIKE', $term);
                 });
             })
             ->orderByDesc('time_in')
@@ -696,7 +596,6 @@ class TimeIn extends Component
         string $type
     ): void {
         $this->message = $message;
-
         $this->messageType = $type;
     }
 
@@ -704,14 +603,7 @@ class TimeIn extends Component
     private function resetMessage(): void
     {
         $this->message = null;
-
         $this->messageType = null;
-
-        /*
-        |--------------------------------------------------------------------------
-        | Clear previous header summary when a new scan starts
-        |--------------------------------------------------------------------------
-        */
 
         $this->clearSummary();
     }

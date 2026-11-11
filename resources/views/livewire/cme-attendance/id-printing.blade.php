@@ -668,7 +668,7 @@
                 /* MANUAL ENTRY - OCCUPY QR CODE + MAIN NAME AREA */
 
                 #printable-id .id-main-name.id-manual-name {
-                    left: 6.10in !important;
+                    left: 6.00in !important;
                     top: 3.40in !important;
                     width: 4.00in !important;
                     height: 1.50in !important;
