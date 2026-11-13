@@ -519,16 +519,6 @@
             return;
         }
 
-        const printWindow = window.open(
-            '',
-            '_blank',
-            'width=1400,height=900'
-        );
-
-        if (!printWindow) {
-            alert('Please allow pop-ups for this page so the ID can be printed.');
-            return;
-        }
 
         /*
         |--------------------------------------------------------------------------
@@ -538,7 +528,7 @@
         */
 
         const printStyles = `
-            <style>
+            @media print {
 
                 @page {
                     size: 14in 8.5in;
@@ -568,7 +558,7 @@
                 /* PRINT SOURCE CONTAINER */
 
                 #printable-id {
-                    position: relative !important;
+                    position: fixed !important;
                     left: 0 !important;
                     top: 0 !important;
                     display: block !important;
@@ -738,53 +728,22 @@
                     white-space: nowrap !important;
                 }
 
-            </style>
+                body * {
+                    visibility: hidden !important;
+                }
+
+                #printable-id,
+                #printable-id * {
+                    visibility: visible !important;
+                }
+
+            }
         `;
+        const printStyleElement = document.createElement('style');
+        printStyleElement.id = 'id-print-styles';
+        printStyleElement.textContent = printStyles;
+        document.head.appendChild(printStyleElement);
 
-        /*
-        |--------------------------------------------------------------------------
-        | CREATE PRINT DOCUMENT
-        |--------------------------------------------------------------------------
-        */
-
-        try {
-
-            printWindow.document.open();
-
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html lang="en">
-                    <head>
-                        <meta charset="UTF-8">
-
-                        <meta
-                            name="viewport"
-                            content="width=device-width, initial-scale=1"
-                        >
-
-                        <title>PSA CME Participant ID</title>
-
-                        ${printStyles}
-                    </head>
-
-                    <body>
-                        ${printable.outerHTML}
-                    </body>
-                </html>
-            `);
-
-            printWindow.document.close();
-
-        } catch (error) {
-
-            console.error('Unable to create print document:', error);
-
-            printWindow.close();
-
-            alert('Unable to prepare the ID for printing.');
-
-            return;
-        }
 
         /*
         |--------------------------------------------------------------------------
@@ -793,48 +752,35 @@
         */
 
         const waitForImages = Promise.all(
-            Array.from(printWindow.document.images).map((img) => {
-
-                if (img.complete) {
+            Array.from(printable.querySelectorAll('img')).map((image) => {
+                if (image.complete) {
                     return Promise.resolve();
                 }
 
                 return new Promise((resolve) => {
-
-                    img.addEventListener('load', resolve, { once: true });
-                    img.addEventListener('error', resolve, { once: true });
-
+                    image.addEventListener('load', resolve, { once: true });
+                    image.addEventListener('error', resolve, { once: true });
                 });
-
             })
         );
 
-        Promise.all([waitForImages])
-            .then(() => {
+        window.addEventListener(
+            'afterprint',
+            () => printStyleElement.remove(),
+            { once: true }
+        );
 
-                if (printWindow.closed) {
-                    return;
-                }
-
-                printWindow.focus();
-
-                printWindow.requestAnimationFrame(() => {
-
-                    printWindow.requestAnimationFrame(() => {
-                        printWindow.print();
-                    });
-
+        waitForImages
+            .then(() => new Promise((resolve) => {
+                window.requestAnimationFrame(() => {
+                    window.requestAnimationFrame(resolve);
                 });
-
-            })
+            }))
+            .then(() => window.print())
             .catch((error) => {
+                printStyleElement.remove();
                 console.error('Print preparation error:', error);
             });
-
-        printWindow.onafterprint = () => {
-            printWindow.close();
-        };
-
     };
 </script>
 @endscript

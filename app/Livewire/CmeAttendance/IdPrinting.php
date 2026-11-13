@@ -42,44 +42,10 @@ class IdPrinting extends Component
 
     public ?string $qrCode = null;
 
-
     /*
     |--------------------------------------------------------------------------
-    | AUTOMATIC PSA ID SEARCH
+    | SEARCH PARTICIPANTS
     |--------------------------------------------------------------------------
-    |
-    | Automatically searches when the user enters a numeric PSA ID.
-    | Name searches are handled separately through searchMember().
-    |
-    */
-
-    public function updatedMemberId($value): void
-    {
-        $search = trim((string) $value);
-
-        $this->resetDisplay();
-        $this->searchResults = [];
-        $this->isManualEntry = false;
-        $this->manualName = '';
-        $this->resetMessage();
-
-        // Only automatically search numeric PSA IDs.
-        if ($search === '' || !ctype_digit($search)) {
-            return;
-        }
-
-        $this->lookupParticipantById($search);
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | SEARCH PARTICIPANTS BY NAME
-    |--------------------------------------------------------------------------
-    |
-    | Called only when the Search button is clicked.
-    | Numeric IDs are handled separately.
-    |
     */
 
     public function searchMember(): void
@@ -136,9 +102,9 @@ class IdPrinting extends Component
                     ->where('cpr.cme_program_code', $this->cmeProgramCode);
             })
             ->where(function ($query) use ($search) {
-                $query->where('mem_first_name', 'like', $search . '%')
-                    ->orWhere('mem_middle_name', 'like', $search . '%')
-                    ->orWhere('mem_last_name', 'like', $search . '%');
+                $query->where('mem_first_name', 'like', $search.'%')
+                    ->orWhere('mem_middle_name', 'like', $search.'%')
+                    ->orWhere('mem_last_name', 'like', $search.'%');
             })
             ->orderBy('mem_last_name')
             ->orderBy('mem_first_name')
@@ -161,7 +127,6 @@ class IdPrinting extends Component
             ];
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | SEARCH REGISTERED NON-MEMBERS
@@ -178,9 +143,9 @@ class IdPrinting extends Component
             ->where('cme_year', $this->cmeYear)
             ->where('cme_program_code', $this->cmeProgramCode)
             ->where(function ($query) use ($search) {
-                $query->where('nm_first_name', 'like', $search . '%')
-                    ->orWhere('nm_middle_name', 'like', $search . '%')
-                    ->orWhere('nm_last_name', 'like', $search . '%');
+                $query->where('nm_first_name', 'like', $search.'%')
+                    ->orWhere('nm_middle_name', 'like', $search.'%')
+                    ->orWhere('nm_last_name', 'like', $search.'%');
             })
             ->orderBy('nm_last_name')
             ->orderBy('nm_first_name')
@@ -203,7 +168,6 @@ class IdPrinting extends Component
             ];
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | SEARCH RESULT MESSAGE
@@ -220,12 +184,11 @@ class IdPrinting extends Component
         }
 
         $this->showMessage(
-            count($this->searchResults) .
+            count($this->searchResults).
             ' matching participant(s) found. Select a participant to continue.',
             'success'
         );
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -274,7 +237,7 @@ class IdPrinting extends Component
                 ->where('member_id_no', $id)
                 ->first();
 
-            if (!$member) {
+            if (! $member) {
                 $this->showMessage(
                     'Member information could not be found.',
                     'error'
@@ -303,7 +266,6 @@ class IdPrinting extends Component
 
             return;
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -347,7 +309,6 @@ class IdPrinting extends Component
             return;
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | NO REGISTRATION FOUND
@@ -355,11 +316,10 @@ class IdPrinting extends Component
         */
 
         $this->showMessage(
-            'No registered participant found with PSA ID: ' . $id,
+            'No registered participant found with PSA ID: '.$id,
             'error'
         );
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -379,7 +339,6 @@ class IdPrinting extends Component
 
         $this->resetMessage();
 
-
         /*
         |--------------------------------------------------------------------------
         | REGULAR MEMBER
@@ -392,7 +351,6 @@ class IdPrinting extends Component
 
             return;
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -413,7 +371,6 @@ class IdPrinting extends Component
         );
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | LOAD SELECTED MEMBER
@@ -432,7 +389,7 @@ class IdPrinting extends Component
             ->where('member_id_no', $id)
             ->first();
 
-        if (!$registered) {
+        if (! $registered) {
             $this->showMessage(
                 'This member is not registered for the selected CME program.',
                 'error'
@@ -453,7 +410,7 @@ class IdPrinting extends Component
             ->where('member_id_no', $id)
             ->first();
 
-        if (!$member) {
+        if (! $member) {
             $this->showMessage(
                 'Member information could not be found.',
                 'error'
@@ -481,7 +438,6 @@ class IdPrinting extends Component
         );
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | LOAD SELECTED NON-MEMBER
@@ -503,7 +459,7 @@ class IdPrinting extends Component
             ->where('nm_id_no', $id)
             ->first();
 
-        if (!$registered) {
+        if (! $registered) {
             $this->showMessage(
                 'This non-member is not registered for the selected CME program.',
                 'error'
@@ -530,7 +486,6 @@ class IdPrinting extends Component
             'success'
         );
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -588,7 +543,6 @@ class IdPrinting extends Component
         );
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | GENERATE QR CODE
@@ -597,7 +551,7 @@ class IdPrinting extends Component
 
     private function generateQrCode(?string $memberId): void
     {
-        if (!$memberId) {
+        if (! $memberId) {
             $this->qrCode = null;
 
             return;
@@ -610,7 +564,6 @@ class IdPrinting extends Component
 
         $this->qrCode = base64_encode($qr);
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -629,7 +582,6 @@ class IdPrinting extends Component
         $this->resetDisplay();
         $this->resetMessage();
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -652,7 +604,6 @@ class IdPrinting extends Component
         $this->qrCode = null;
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | MESSAGES
@@ -665,13 +616,11 @@ class IdPrinting extends Component
         $this->messageType = $type;
     }
 
-
     private function resetMessage(): void
     {
         $this->message = null;
         $this->messageType = null;
     }
-
 
     /*
     |--------------------------------------------------------------------------
